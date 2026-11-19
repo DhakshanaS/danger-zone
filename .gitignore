@@ -1,0 +1,11 @@
+# local tooling output
+tools/out/
+*.f32
+*.pcm
+__pycache__/
+node_modules/
+.clasp.json
+.DS_Store
+# never commit secrets (the Telegram token lives in Apps Script Script Properties, not in files)
+*.env
+.env*
