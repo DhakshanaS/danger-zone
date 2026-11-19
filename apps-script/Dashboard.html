@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Danger Zone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+:root{
+  --bg:#07060f; --panel:rgba(18,16,38,.72); --panel2:rgba(28,25,58,.85); --line:rgba(255,255,255,.08);
+  --txt:#eef0ff; --mut:#8d91b8; --tc:#2ee6a6;
+  --crit:#ff2e63; --high:#ff8a00; --med:#ffd60a; --low:#2ee6a6; --ok:#2ee6a6; --violet:#8b5cf6;
+  --disp:'Chakra Petch',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 15% -10%, color-mix(in srgb,var(--tc) 18%,transparent), transparent 70%),
+    radial-gradient(700px 500px at 110% 110%, rgba(139,92,246,.18), transparent 70%),
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) 0 0/40px 40px;
+  transition:background 1s}
+#bg,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#bg{z-index:0}#fx{z-index:60}
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:1;transition:box-shadow 1s}
+body.red .vignette{animation:redpulse 1.6s ease-in-out infinite}
+@keyframes redpulse{0%,100%{box-shadow:inset 0 0 80px rgba(255,20,70,.25)}50%{box-shadow:inset 0 0 180px rgba(255,20,70,.55)}}
+body.flash .vignette{animation:flash .5s ease-out}
+@keyframes flash{0%{box-shadow:inset 0 0 0 2000px rgba(46,230,166,.25)}100%{box-shadow:inset 0 0 0 0 transparent}}
+body.shake .app{animation:shake .5s}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+
+.app{position:relative;z-index:2;max-width:1500px;margin:0 auto;padding:18px 20px 120px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+.mono{font-family:var(--mono)}
+
+/* header */
+header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:2px;display:flex;align-items:center;gap:10px}
+.logo .bolt{display:inline-block;color:var(--tc);text-shadow:0 0 18px var(--tc);animation:bolt 2.4s infinite}
+@keyframes bolt{0%,92%,100%{opacity:1}94%{opacity:.2}96%{opacity:1}97%{opacity:.4}}
+.logo small{font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:1px;font-weight:500}
+.chip-demo{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:99px;border:1px dashed var(--mut);color:var(--mut)}
+.clock{font-family:var(--mono);font-size:15px;color:var(--mut);margin-left:auto}
+.threat{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:14px;min-width:260px}
+.threat .lbl{font-family:var(--disp);font-size:13px;letter-spacing:1.5px;color:var(--tc);min-width:92px;text-shadow:0 0 12px var(--tc)}
+.threat .bar{flex:1;height:8px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}
+.threat .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--low),var(--med),var(--high),var(--crit));background-size:260px 100%;border-radius:9px;transition:width 1s cubic-bezier(.2,.9,.2,1);box-shadow:0 0 12px var(--tc)}
+.iconbtn{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:17px;transition:transform .15s,border-color .2s}
+.iconbtn:hover{transform:translateY(-2px);border-color:var(--tc)}
+.iconbtn.spin{animation:spin .8s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+.stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--c);opacity:.12;filter:blur(8px)}
+.stat .k{font-size:11px;letter-spacing:1.6px;color:var(--mut);text-transform:uppercase;font-weight:600}
+.stat .v{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--c);line-height:1.1;margin-top:4px;display:inline-block}
+.stat .v.bump{animation:bump .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.5)}100%{transform:scale(1)}}
+.stat.hot{animation:hot 1.2s infinite}
+@keyframes hot{50%{border-color:var(--crit);box-shadow:0 0 24px rgba(255,46,99,.35)}}
+
+/* hero */
+.hero{position:relative;border-radius:22px;padding:2px;margin-bottom:22px;
+  background:conic-gradient(from var(--ang),var(--hc),transparent 25%,var(--violet) 50%,transparent 75%,var(--hc));
+  animation:rot 4s linear infinite}
+@keyframes rot{to{--ang:360deg}}
+.hero-in{border-radius:20px;background:linear-gradient(135deg,rgba(22,19,48,.96),rgba(10,9,24,.96));padding:24px 28px;display:grid;grid-template-columns:1fr auto;gap:18px 28px;align-items:center}
+.hero .eyebrow{font-family:var(--disp);letter-spacing:3px;font-size:13px;color:var(--hc);display:flex;align-items:center;gap:10px}
+.hero .eyebrow .pulse{width:10px;height:10px;border-radius:50%;background:var(--hc);box-shadow:0 0 0 0 var(--hc);animation:ping 1.4s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hc) 70%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
+.hero h2{font-family:var(--disp);font-size:clamp(26px,3.6vw,46px);line-height:1.08;margin:8px 0 6px;word-break:break-word}
+.hero .meta{color:var(--mut);font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hero .big{font-family:var(--mono);font-weight:700;font-size:clamp(30px,4.4vw,58px);color:var(--hc);text-shadow:0 0 24px color-mix(in srgb,var(--hc) 60%,transparent);text-align:right;white-space:nowrap}
+.hero .big small{display:block;font-size:12px;letter-spacing:2px;color:var(--mut);text-shadow:none;font-family:var(--body);font-weight:600}
+.hero .row2{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hero.late .big{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.hero.calm{--hc:var(--ok)}
+.hero.calm h2{font-size:30px}
+.btn{padding:11px 18px;border-radius:12px;font-weight:700;font-size:14px;letter-spacing:.3px;transition:transform .12s,box-shadow .2s,filter .2s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:scale(.96)}
+.btn.done{background:linear-gradient(135deg,#2ee6a6,#0fb88a);color:#032117;box-shadow:0 8px 24px rgba(46,230,166,.3)}
+.btn.done:hover{box-shadow:0 10px 34px rgba(46,230,166,.55)}
+.btn.go{background:rgba(255,255,255,.08);border:1px solid var(--line)}
+.btn.ghost{color:var(--mut)}
+.btn.focus{background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.35)}
+
+/* fuse */
+.fuse{position:relative;height:6px;border-radius:9px;background:rgba(255,255,255,.07);overflow:visible;margin-top:10px}
+.fuse i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,color-mix(in srgb,var(--dc) 40%,transparent),var(--dc));transition:width .9s linear}
+.fuse i::after{content:"";position:absolute;right:-5px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px var(--dc),0 0 20px 6px #ffb703;animation:spark .25s infinite alternate}
+@keyframes spark{to{transform:scale(.55);opacity:.7}}
+.hero .fuse{height:10px}
+.hero .fuse i::after{width:14px;height:14px;margin-top:-7px}
+
+/* lanes */
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px;align-items:start}
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;backdrop-filter:blur(8px);min-height:120px}
+.lane>header{display:flex;align-items:center;gap:8px;font-family:var(--disp);letter-spacing:1.6px;font-size:13px;padding:4px 4px 10px;color:var(--lc)}
+.lane>header .dot{width:8px;height:8px;border-radius:50%;background:var(--lc);box-shadow:0 0 10px var(--lc)}
+.lane>header b{margin-left:auto;font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.07);color:var(--txt);padding:2px 8px;border-radius:99px}
+.lane .empty{color:var(--mut);font-size:13px;padding:14px 6px;text-align:center;opacity:.7}
+.lane[data-lane=overdue]{--lc:var(--crit)}
+.lane[data-lane=d1]{--lc:var(--high)}
+.lane[data-lane=d3]{--lc:var(--med)}
+.lane[data-lane=d7]{--lc:#60a5fa}
+.lane[data-lane=later]{--lc:var(--violet)}
+.lane[data-lane=none]{--lc:var(--mut)}
+.lane[data-lane=overdue].has{border-color:rgba(255,46,99,.45);box-shadow:0 0 30px rgba(255,46,99,.15) inset}
+
+.card{position:relative;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--dc);border-radius:14px;padding:12px 12px 10px;margin-bottom:10px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 12px 30px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--dc) 50%,transparent)}
+.card.enter{animation:enter .55s cubic-bezier(.2,1.2,.3,1) both;animation-delay:var(--delay,0s)}
+@keyframes enter{from{opacity:0;transform:translateY(24px) scale(.92) rotateX(20deg)}to{opacity:1;transform:none}}
+.card.boom{animation:boom .45s ease-in forwards!important}
+@keyframes boom{40%{transform:scale(1.08);filter:brightness(2)}100%{transform:scale(.6);opacity:0;filter:blur(6px)}}
+.card.late{animation:latepulse 1.8s infinite;border-color:rgba(255,46,99,.5);border-left-color:var(--crit)}
+@keyframes latepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,46,99,0)}50%{box-shadow:0 0 22px 2px rgba(255,46,99,.35)}}
+.card.late.jolt{animation:latepulse 1.8s infinite,shake .5s}
+.card.d-Critical::before{content:"";position:absolute;inset:-1px;border-radius:14px;padding:1px;pointer-events:none;
+  background:conic-gradient(from var(--ang),transparent 60%,var(--crit));animation:rot 2.5s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.card .ctop{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.badge{font-size:10px;font-weight:800;letter-spacing:1.2px;padding:3px 8px;border-radius:99px;background:color-mix(in srgb,var(--dc) 18%,transparent);color:var(--dc);border:1px solid color-mix(in srgb,var(--dc) 40%,transparent)}
+.cat{font-size:11px;color:var(--mut);margin-left:auto}
+.doing-tag{font-size:10px;font-weight:800;color:#60a5fa;letter-spacing:1px;animation:blink 1.4s steps(2) infinite}
+.card h4{font-size:15px;font-weight:600;line-height:1.3;word-break:break-word}
+.card .note{font-size:12px;color:var(--mut);margin-top:4px;line-height:1.35}
+.card .cd{font-family:var(--mono);font-size:13px;margin-top:8px;color:var(--dc);font-weight:700}
+.card.late .cd{color:var(--crit)}
+.card .acts{display:flex;gap:6px;margin-top:10px}
+.card .acts button{flex:1;font-size:12px;font-weight:700;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--line);transition:background .15s,transform .1s}
+.card .acts button:hover{background:rgba(255,255,255,.12)}
+.card .acts button:active{transform:scale(.94)}
+.card .acts button.d{background:rgba(46,230,166,.14);color:var(--ok);border-color:rgba(46,230,166,.3)}
+.card .acts button.d:hover{background:rgba(46,230,166,.28)}
+
+/* wins */
+.wins{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.wins h3{font-family:var(--disp);letter-spacing:1.6px;font-size:13px;color:var(--ok);margin-bottom:8px}
+.wins .list{display:flex;gap:8px;flex-wrap:wrap}
+.trophy{font-size:12px;padding:6px 10px;border-radius:99px;background:rgba(46,230,166,.1);border:1px solid rgba(46,230,166,.25);color:#bdf7e3;display:inline-flex;gap:6px;align-items:center}
+.trophy button{color:var(--mut);font-size:11px}
+.trophy button:hover{color:var(--txt)}
+
+/* FAB */
+.fab{position:fixed;right:24px;bottom:24px;z-index:40;width:66px;height:66px;border-radius:50%;font-size:34px;font-weight:300;color:#fff;
+  background:linear-gradient(135deg,#ff2e63,#8b5cf6);box-shadow:0 10px 40px rgba(255,46,99,.45);transition:transform .2s}
+.fab::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,46,99,.5);animation:ring 2s infinite}
+@keyframes ring{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.35);opacity:0}}
+.fab:hover{transform:rotate(90deg) scale(1.08)}
+
+/* modal + overlays */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,4,14,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal{width:min(560px,100%);background:linear-gradient(160deg,#17143a,#0d0b22);border:1px solid rgba(139,92,246,.35);border-radius:22px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.85) translateY(20px);opacity:0}}
+.modal h3{font-family:var(--disp);letter-spacing:2px;font-size:18px;margin-bottom:14px}
+.modal label{display:block;font-size:11px;letter-spacing:1.4px;color:var(--mut);font-weight:700;text-transform:uppercase;margin:14px 0 7px}
+.modal input[type=text],.modal input[type=datetime-local]{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font:inherit;font-size:16px;outline:none;color-scheme:dark}
+.modal input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:9px 12px;border-radius:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.05);border:1px solid var(--line);transition:all .15s}
+.seg button.on{background:color-mix(in srgb,var(--sc,var(--violet)) 25%,transparent);border-color:var(--sc,var(--violet));color:#fff;box-shadow:0 0 16px color-mix(in srgb,var(--sc,var(--violet)) 35%,transparent)}
+.modal .foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.hint{font-size:12px;color:var(--mut);margin-top:6px}
+
+/* gate */
+#gate{position:fixed;inset:0;z-index:80;background:radial-gradient(circle at 50% 40%,#1b1446,#05040d 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:20px;transition:opacity .5s,transform .6s}
+#gate.gone{opacity:0;transform:scale(1.3);pointer-events:none}
+#gate h1{font-family:var(--disp);font-size:clamp(40px,8vw,84px);letter-spacing:6px;background:linear-gradient(90deg,#ff2e63,#ffd60a,#2ee6a6,#8b5cf6,#ff2e63);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 4s linear infinite}
+@keyframes sheen{to{background-position:300% 0}}
+#gate p{color:var(--mut);max-width:420px;line-height:1.5}
+#gate .enter{font-family:var(--disp);font-size:20px;letter-spacing:3px;padding:18px 40px;border-radius:16px;background:linear-gradient(135deg,#ff2e63,#8b5cf6);color:#fff;box-shadow:0 10px 50px rgba(255,46,99,.5);animation:breath 2s ease-in-out infinite}
+@keyframes breath{50%{transform:scale(1.06);box-shadow:0 10px 70px rgba(139,92,246,.7)}}
+#gate .quiet{color:var(--mut);font-size:13px;text-decoration:underline}
+
+/* focus */
+.focusbox{width:min(720px,100%);text-align:center;padding:30px 20px;animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+.focusbox .eyebrow{font-family:var(--disp);letter-spacing:4px;color:var(--violet);font-size:13px}
+.focusbox h2{font-family:var(--disp);font-size:clamp(30px,5vw,54px);margin:10px 0 6px;line-height:1.1}
+.focusbox .dl{font-family:var(--mono);color:var(--mut)}
+.ringwrap{position:relative;width:240px;height:240px;margin:26px auto 14px}
+.ringwrap svg{transform:rotate(-90deg)}
+.ringwrap .t{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:46px;font-weight:700}
+.ringwrap circle{fill:none;stroke-width:10}
+.ringwrap .track{stroke:rgba(255,255,255,.08)}
+.ringwrap .prog{stroke:url(#rg);stroke-linecap:round;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 8px rgba(139,92,246,.7))}
+.focusbox .seg{justify-content:center;margin-bottom:16px}
+.focusbox .foot{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* toasts */
+.toasts{position:fixed;top:16px;right:16px;z-index:70;display:flex;flex-direction:column;gap:10px;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:linear-gradient(135deg,#1d1946,#120f2c);border:1px solid var(--tcol,var(--violet));border-radius:14px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 20px color-mix(in srgb,var(--tcol,var(--violet)) 30%,transparent);font-size:14px;animation:tin .4s cubic-bezier(.2,1.4,.4,1)}
+.toast b{display:block;font-family:var(--disp);letter-spacing:1px;color:var(--tcol,var(--violet));margin-bottom:2px}
+.toast.out{animation:tout .3s forwards}
+@keyframes tin{from{transform:translateX(120%)}}
+@keyframes tout{to{transform:translateX(120%);opacity:0}}
+
+.skel{height:120px;border-radius:14px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.err{background:rgba(255,46,99,.1);border:1px solid rgba(255,46,99,.4);border-radius:14px;padding:14px;margin-bottom:16px;display:none}
+
+@media (max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .hero-in{grid-template-columns:1fr;padding:20px}
+  .hero .big{text-align:left}
+  .threat{min-width:0;flex:1 1 100%;order:5}
+  .clock{display:none}
+  .app{padding:14px 12px 120px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ============ GEN Z SKIN: stickers, hard shadows, lime/pink/lilac ============ */
+:root{
+  --bg:#110b1f; --panel:#1c1533; --panel2:#251c42; --line:rgba(255,255,255,.14);
+  --txt:#fbf7ff; --mut:#ab9fcc; --tc:#c6ff3d;
+  --crit:#ff3d7f; --high:#ff9f1c; --med:#ffe14d; --low:#c6ff3d; --ok:#c6ff3d; --violet:#b388ff; --cyan:#5ce1ff;
+  --disp:'Unbounded',system-ui,sans-serif; --body:'Space Grotesk',system-ui,sans-serif; --mono:'Space Mono',ui-monospace,monospace;
+  --ink:#07040e;
+}
+body::before{
+  background:
+    radial-gradient(520px 420px at 8% 4%, rgba(179,136,255,.35), transparent 70%),
+    radial-gradient(480px 380px at 96% 18%, rgba(255,61,127,.22), transparent 70%),
+    radial-gradient(560px 460px at 70% 105%, color-mix(in srgb,var(--tc) 22%,transparent), transparent 70%),
+    radial-gradient(rgba(255,255,255,.09) 1px, transparent 1.6px) 0 0/22px 22px;
+}
+.logo{font-family:var(--disp);font-weight:800;letter-spacing:-.5px;font-size:24px}
+.logo .bolt{background:var(--tc);color:var(--ink);text-shadow:none;border:2px solid var(--ink);border-radius:10px;padding:0 6px;box-shadow:3px 3px 0 var(--ink);rotate:-8deg}
+.chip-demo{border:2px solid var(--cyan);color:var(--cyan);border-style:solid;rotate:3deg;font-weight:700}
+.threat,.stat,.lane,.wins,.iconbtn{border:2px solid var(--ink);backdrop-filter:none;background:var(--panel)}
+.threat{box-shadow:4px 4px 0 var(--tc);border-radius:16px}
+.threat .lbl{font-family:var(--disp);font-size:11px;letter-spacing:0;text-shadow:none;min-width:118px}
+.iconbtn{box-shadow:3px 3px 0 var(--violet)}
+.iconbtn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--violet);border-color:var(--ink)}
+.stat{box-shadow:5px 5px 0 var(--c);border-radius:18px}
+.stat:nth-child(odd){rotate:-.6deg}.stat:nth-child(even){rotate:.6deg}
+.stat .k{text-transform:none;letter-spacing:0;font-size:13px;font-weight:700;color:var(--txt)}
+.stat .v{font-family:var(--disp);font-weight:800;font-size:38px}
+.stat.hot{animation:hot2 1s infinite}
+@keyframes hot2{50%{box-shadow:9px 9px 0 var(--crit);transform:translate(-2px,-2px)}}
+.hero{border-radius:28px}
+.hero-in{border-radius:26px;background:linear-gradient(135deg,#221a3f,#150f29)}
+.hero .eyebrow{font-family:var(--disp);letter-spacing:0;font-size:13px;font-weight:700;background:var(--hc);color:var(--ink);display:inline-flex;padding:5px 12px;border-radius:99px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);rotate:-2deg}
+.hero .eyebrow .pulse{background:var(--ink)}
+.hero h2{font-family:var(--disp);font-weight:800;letter-spacing:-1px;font-size:clamp(24px,3.3vw,44px);margin-top:14px}
+.hero .big{font-family:var(--mono)}
+.hero .big small{font-family:var(--body);letter-spacing:0;font-size:13px}
+.btn{border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn.done{background:var(--ok);color:var(--ink)}
+.btn.done:hover{box-shadow:6px 6px 0 var(--ink)}
+.btn.focus{background:var(--violet);color:var(--ink)}
+.btn.go{background:var(--cyan);color:var(--ink);border-color:var(--ink)}
+.btn.ghost{box-shadow:none;border-color:transparent;text-decoration:underline wavy;text-underline-offset:5px}
+.btn.ghost:hover{box-shadow:none}
+.lane{border-radius:22px;box-shadow:5px 5px 0 var(--lc)}
+.lane>header{font-family:var(--disp);letter-spacing:0;font-size:12px;font-weight:700}
+.lane[data-lane=d7]{--lc:var(--cyan)}
+.lane[data-lane=overdue].has{border-color:var(--ink);box-shadow:7px 7px 0 var(--crit),0 0 40px rgba(255,61,127,.25)}
+.card{border:2px solid var(--ink);border-left:2px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--dc)}
+.card:nth-child(odd){rotate:-.5deg}.card:nth-child(even){rotate:.5deg}
+.card:hover{transform:translate(-3px,-3px);rotate:0deg;box-shadow:7px 7px 0 var(--dc)}
+.card.late{border-color:var(--ink)}
+@keyframes latepulse{0%,100%{box-shadow:4px 4px 0 var(--crit)}50%{box-shadow:8px 8px 0 var(--crit),0 0 26px rgba(255,61,127,.45)}}
+.card.d-Critical::before{border-radius:16px}
+.badge{background:var(--dc);color:var(--ink);border:2px solid var(--ink);border-radius:8px;letter-spacing:0;font-size:11px;font-weight:700;rotate:-3deg;box-shadow:2px 2px 0 var(--ink);text-transform:lowercase}
+.card h4{font-weight:700;font-size:16px}
+.card .acts button{border:2px solid var(--ink);border-radius:10px;box-shadow:2px 2px 0 var(--ink);text-transform:lowercase}
+.card .acts button:active{transform:translate(2px,2px);box-shadow:none}
+.card .acts button.d{background:var(--ok);color:var(--ink);border-color:var(--ink)}
+.card .acts button.d:hover{background:#d9ff7a}
+.doing-tag{color:var(--cyan)}
+.wins{border-radius:22px;box-shadow:5px 5px 0 var(--ok)}
+.wins h3{font-family:var(--disp);letter-spacing:0;font-size:14px}
+.trophy{background:var(--ok);color:var(--ink);border:2px solid var(--ink);font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+.trophy:nth-child(odd){rotate:-2deg}.trophy:nth-child(even){rotate:2deg}
+.trophy button{color:var(--ink)}
+.fab{background:var(--tc);color:var(--ink);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--crit);font-weight:700}
+.fab::before{border-color:var(--tc)}
+.fab:hover{transform:rotate(90deg) scale(1.08)}
+.modal{border:2px solid var(--ink);border-radius:26px;box-shadow:8px 8px 0 var(--tc);background:linear-gradient(160deg,#241b45,#160f2e)}
+.modal h3{font-family:var(--disp);letter-spacing:-.5px;font-size:22px;font-weight:800}
+.modal label{text-transform:none;letter-spacing:0;font-size:13px;color:var(--txt)}
+.modal input[type=text],.modal input[type=datetime-local]{border:2px solid var(--ink);background:#0d0819;border-radius:14px}
+.modal input:focus{border-color:var(--tc);box-shadow:4px 4px 0 var(--tc)}
+.seg button{border-radius:99px;border:2px solid var(--line)}
+.seg button.on{background:var(--sc,var(--tc));color:var(--ink);border-color:var(--ink);box-shadow:3px 3px 0 var(--ink);rotate:-2deg}
+#fWhen,#fCat,#sprintLen{--sc:var(--tc)}
+#gate{background:radial-gradient(circle at 30% 20%,#3a2370,transparent 60%),radial-gradient(circle at 80% 90%,#5a1640,transparent 55%),#0d0819}
+#gate h1{font-family:var(--disp);font-weight:800;letter-spacing:-3px;font-size:clamp(54px,11vw,120px);background:linear-gradient(90deg,#c6ff3d,#5ce1ff,#b388ff,#ff3d7f,#c6ff3d);background-size:300% 100%;-webkit-background-clip:text;background-clip:text}
+#gate .enter{font-family:var(--disp);letter-spacing:0;font-weight:800;background:#c6ff3d;color:var(--ink);border:3px solid var(--ink);box-shadow:7px 7px 0 var(--crit);border-radius:99px;rotate:-2deg;animation:wiggle 2.2s ease-in-out infinite}
+@keyframes wiggle{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-3deg) scale(1.05)}75%{transform:rotate(3deg) scale(1.05)}}
+.focusbox .eyebrow{font-family:var(--disp);letter-spacing:0;font-weight:700;color:var(--tc)}
+.focusbox h2{font-family:var(--disp);font-weight:800;letter-spacing:-1px}
+.ringwrap .t{font-family:var(--mono)}
+.toast{border:2px solid var(--ink);background:var(--panel2);box-shadow:5px 5px 0 var(--tcol,var(--violet));rotate:-1deg;border-radius:16px}
+.toast b{font-family:var(--disp);letter-spacing:0;font-size:13px}
+@media (max-width:760px){.stat .v{font-size:30px}}
+#brownBtn.on{background:#a0764a;color:#fff;animation:breath2 3s ease-in-out infinite}
+@keyframes breath2{50%{box-shadow:6px 6px 0 var(--ink),0 0 30px rgba(160,118,74,.6)}}
+.toasts,.toast{pointer-events:none}
+
+/* ============ PANIC FX ============ */
+:root{--pi:0}
+.panicv{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;
+  box-shadow:inset 0 0 calc(60px + 240px*var(--pi)) calc(10px + 70px*var(--pi)) rgba(255,20,60,calc(.35 + .5*var(--pi)))}
+body.beat .panicv{animation:beatv .55s ease-out}
+@keyframes beatv{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+body.p3 .panicv,body.p4 .panicv{opacity:.35}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
+body.p3 .scan,body.p4 .scan{opacity:1;animation:scanmove 6s linear infinite}
+@keyframes scanmove{to{background-position:0 300px}}
+body.beat.p2 #hero,body.beat.p3 #hero,body.beat.p4 #hero{animation:rot 4s linear infinite,thumpH .35s ease-out}
+@keyframes thumpH{15%{transform:scale(calc(1 + .022*var(--pi))) translate(2px,-1px)}30%{transform:translate(-2px,1px)}45%{transform:scale(calc(1 + .012*var(--pi)))}100%{transform:none}}
+body.p2 #hero .big,body.p3 #hero .big,body.p4 #hero .big{animation:glitch 1.2s steps(1) infinite}
+@keyframes glitch{0%,100%{text-shadow:0 0 24px currentColor;transform:none}
+  20%{text-shadow:-3px 0 #5ce1ff,3px 0 #ff3d7f;transform:translateX(1px)}22%{text-shadow:2px 0 #5ce1ff,-2px 0 #ff3d7f;transform:skewX(-6deg)}
+  24%{text-shadow:0 0 24px currentColor;transform:none}70%{text-shadow:-4px 0 #c6ff3d,4px 0 #ff3d7f;transform:translateY(-1px)}72%{transform:none}}
+body.p3 .app,body.p4 .app{animation:screenglitch 3.2s steps(1) infinite}
+@keyframes screenglitch{0%,100%{filter:none;transform:none}48%{filter:hue-rotate(-25deg) saturate(1.6);transform:translateX(-3px)}
+  49%{filter:none;transform:translateX(3px)}50%{transform:none}86%{filter:contrast(1.3) hue-rotate(15deg);transform:skewX(.6deg)}87%{filter:none;transform:none}}
+.card.tense{animation:tenseP 2.4s ease-in-out infinite}
+@keyframes tenseP{50%{box-shadow:7px 7px 0 var(--dc),0 0 26px color-mix(in srgb,var(--dc) 50%,transparent)}}
+.card.panic{animation:latepulse 1s infinite,jitter 2.5s infinite}
+@keyframes jitter{0%,90%,100%{transform:none}92%{transform:translate(-2px,1px) rotate(-1deg)}94%{transform:translate(2px,-1px) rotate(1deg)}96%{transform:translate(-1px,0)}}
+.card.panic .cd{animation:glitch 1.2s steps(1) infinite}
+
+.panicbar{display:none;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:-4px 0 18px;padding:12px 16px;border:2px solid var(--ink);border-radius:18px;
+  background:linear-gradient(90deg,#3a0f22,#1c1533);box-shadow:5px 5px 0 var(--crit);position:relative;z-index:2}
+.panicbar.show{display:flex;animation:pop .35s}
+.panicbar .pl{font-family:var(--disp);font-weight:800;color:var(--crit);font-size:14px}
+.panicbar .pt{font-weight:700;flex:1;min-width:140px}
+.panicbar .pc{font-weight:700;font-size:22px;color:#fff}
+.pmeter{flex-basis:100%;height:8px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}
+.pmeter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--med),var(--high),var(--crit));transition:width 1s linear}
+.pacts{display:flex;gap:8px;flex-wrap:wrap}
+body.p1 .panicbar{box-shadow:5px 5px 0 var(--med)} body.p1 .panicbar .pl{color:var(--med)}
+body.p2 .panicbar{box-shadow:5px 5px 0 var(--high)} body.p2 .panicbar .pl{color:var(--high)}
+body.beat .panicbar .pc{animation:bump .35s}
+
+.melt{background:radial-gradient(circle,rgba(120,0,30,.78),rgba(5,4,14,.94));z-index:55}
+.meltbox{text-align:center;max-width:680px;animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+.meltbox .siren{font-size:64px;animation:siren .5s steps(2) infinite}
+@keyframes siren{50%{filter:hue-rotate(180deg) brightness(1.6);transform:scale(1.15) rotate(8deg)}}
+.meltbox .eyebrow{font-family:var(--disp);font-weight:800;letter-spacing:8px;color:var(--crit);font-size:18px;text-transform:uppercase;animation:blink .6s steps(2) infinite}
+.meltbox h2{font-family:var(--disp);font-weight:800;font-size:clamp(28px,5vw,52px);margin:10px 0;word-break:break-word}
+.meltT{font-size:clamp(56px,12vw,130px);font-weight:700;color:var(--crit);animation:glitch .9s steps(1) infinite}
+.meltbox p{margin:8px 0 22px;font-size:16px}
+.meltbox .foot{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ============ NOISE LAB ============ */
+.noise{margin-top:22px;background:var(--panel);border:2px solid var(--ink);border-radius:22px;padding:16px;box-shadow:5px 5px 0 #a0764a;position:relative;z-index:2}
+.noise>header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.noise h3{font-family:var(--disp);font-size:16px;font-weight:800}
+.nzstate{margin-left:auto;font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:99px;border:2px solid var(--line);color:var(--mut)}
+.nzstate.on{background:var(--tc);color:var(--ink);border-color:var(--ink);animation:breath2 3s ease-in-out infinite}
+.nzrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.nzplay{width:58px;height:58px;border-radius:50%;font-size:22px;background:var(--tc);color:var(--ink);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);transition:transform .12s}
+.nzplay:active{transform:translate(3px,3px);box-shadow:none}
+.nzplay.on{background:var(--violet)}
+#nzColor button[data-c=white].on{--sc:#f2f2f2} #nzColor button[data-c=pink].on{--sc:#ff8fc7} #nzColor button[data-c=brown].on{--sc:#c08a55}
+.nzvol{display:flex;align-items:center;gap:10px;margin-top:14px}
+.nzvol input{flex:1;accent-color:var(--tc);height:28px}
+.nzvol b{min-width:42px;text-align:right}
+.nzvol input.loud{accent-color:var(--high)}
+.nzloud{margin-top:6px;font-size:13px;font-weight:700;color:var(--high)}
+.nzloud[hidden]{display:none}
+#nzViz{display:block;width:100%;height:56px;margin-top:10px;border-radius:12px;background:rgba(0,0,0,.25)}
+.nzgold{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.nzgtxt{flex:1;min-width:200px;font-size:14px;color:var(--mut)}
+.nzgtxt b{color:var(--txt)}
+.nzinfo{margin-top:12px;font-size:13px;color:var(--mut);line-height:1.5}
+.nzinfo summary{cursor:pointer;color:var(--txt);font-weight:700}
+.nzinfo p{margin-top:8px}
+.nzchip{position:fixed;left:20px;bottom:24px;z-index:40;padding:10px 14px;border-radius:99px;background:var(--panel2);color:var(--txt);border:2px solid var(--ink);box-shadow:4px 4px 0 #a0764a;font-weight:700;font-size:13px;display:flex;gap:8px;align-items:center}
+.nzchip[hidden]{display:none}
+.nzchip i{width:8px;height:8px;border-radius:50%;background:var(--tc);animation:blink 1.2s steps(2) infinite}
+.gfbox{width:min(640px,100%);text-align:center;padding:24px;user-select:none;-webkit-user-select:none}
+.gfbox .eyebrow{font-family:var(--disp);font-weight:700;color:var(--tc);font-size:13px}
+.gfbox h2{font-family:var(--disp);font-weight:800;font-size:clamp(24px,4vw,36px);margin:10px 0 14px}
+.gfbox p{margin:8px 0;line-height:1.5}
+.gfnote{font-size:13px;color:var(--mut)}
+.gfbox .foot{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.gfround{font-family:var(--disp);font-weight:700;color:var(--mut);margin:10px 0}
+.gfletter{font-size:clamp(110px,22vw,190px);font-weight:700;height:1.2em;line-height:1.2em;margin:10px 0}
+.gfletter.hit{color:var(--ok)} .gfletter.fa{color:var(--crit)}
+.gfhint{color:var(--mut);margin-bottom:14px}
+.gfbars{display:grid;gap:10px;margin:16px 0;text-align:left}
+.gfbar{display:grid;grid-template-columns:90px 1fr 84px;gap:10px;align-items:center;font-weight:700;font-size:14px}
+.gfbar .tr{height:16px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;border:2px solid var(--ink)}
+.gfbar .tr i{display:block;height:100%;background:var(--violet);border-radius:6px;transition:width .8s cubic-bezier(.2,1.2,.3,1)}
+.gfbar.best .tr i{background:#c6ff3d}
+.gfbar small{color:var(--mut);font-weight:500}
+.gfbar span:last-child{white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="vignette"></div>
+<div class="panicv"></div>
+<div class="scan"></div>
+
+<div id="gate">
+  <h1>lock in.</h1>
+  <p>ur tasks, ranked by how cooked u'd be if u miss them. do the top one. ignore the rest fr. 🫡</p>
+  <button class="enter" id="enterBtn">let's gooo 🔒</button>
+  <button class="quiet" id="enterQuiet">enter on mute 🤫</button>
+</div>
+
+<div class="app">
+  <header class="top">
+    <div class="logo"><span class="bolt">⚡</span>danger zone <small id="sub">loading…</small></div>
+    <span class="chip-demo" id="demoChip" hidden>DEMO DATA</span>
+    <div class="clock" id="clock"></div>
+    <div class="threat" title="Threat level: how much is on fire right now">
+      <span class="lbl" id="threatLbl">vibing</span><div class="bar"><i id="threatBar"></i></div>
+    </div>
+    <button class="iconbtn" id="sndBtn" title="Sound on/off">🔊</button>
+    <button class="iconbtn" id="refBtn" title="Refresh from sheet">⟳</button>
+  </header>
+
+  <div class="err" id="err"></div>
+
+  <section class="stats">
+    <div class="stat" id="stOver" style="--c:var(--crit)"><div class="k">😵 cooked (overdue)</div><div class="v">0</div></div>
+    <div class="stat" style="--c:var(--high)"><div class="k">⏰ due in 24h</div><div class="v" id="stDay">0</div></div>
+    <div class="stat" style="--c:var(--violet)"><div class="k">💀 critical af</div><div class="v" id="stCrit">0</div></div>
+    <div class="stat" style="--c:var(--ok)"><div class="k">🏆 W's today</div><div class="v" id="stWins">0</div></div>
+  </section>
+
+  <section class="panicbar" id="panicBar">
+    <div class="pl"></div><div class="pt"></div><div class="pc mono"></div>
+    <div class="pmeter"><i class="pb"></i></div>
+    <div class="pacts"><button class="btn done" data-act="pstart">▶ i'm on it (kills the panic)</button><button class="btn ghost" data-act="psnooze">pause panic 10 min</button></div>
+  </section>
+  <section class="hero" id="hero"><div class="hero-in"><div class="skel" style="grid-column:1/-1"></div></div></section>
+  <section class="lanes" id="lanes"></section>
+  <section class="noise" id="noiseSec">
+    <header><h3>🎧 noise lab</h3><span class="nzstate" id="nzState">off</span></header>
+    <div class="nzrow">
+      <button class="nzplay" id="nzPlay" title="play / pause">▶</button>
+      <div class="seg" id="nzColor">
+        <button type="button" data-c="white">⚪ white</button>
+        <button type="button" data-c="pink">🩷 pink</button>
+        <button type="button" data-c="brown">🟤 brown</button>
+      </div>
+    </div>
+    <div class="nzvol"><span>🔈</span><input type="range" id="nzVol" min="0" max="100" step="1"><span>🔊</span><b id="nzVolT" class="mono"></b></div>
+    <div class="nzloud" id="nzLoud" hidden>⚠️ loud zone (louder than -18 LUFS). fine for a bit — turn it down for long sessions to protect ur ears.</div>
+    <canvas id="nzViz"></canvas>
+    <div class="nzgold">
+      <div id="nzGoldTxt" class="nzgtxt"></div>
+      <button class="btn focus" id="nzFind" type="button">🎯 find my goldilocks level (2 min)</button>
+    </div>
+    <details class="nzinfo"><summary>what's the science? (tap)</summary>
+      <p>the idea ("stochastic resonance" / moderate brain arousal): some ADHD brains run under-stimulated, and a steady background noise adds just enough input to sharpen focus. too little does nothing, too much distracts — the sweet spot is different for everyone.</p>
+      <p>real talk: a 2024 meta-analysis found a <b>small</b> benefit for ADHD folks with white/pink noise (and a slight downside for non-ADHD people). brown noise is the internet favourite and the most comfy, but has the least direct research. some people do best in silence — the finder will tell u.</p>
+      <p>how it's made: generated live so it never loops · independent left/right channels · no volume swells · rumble below 35 Hz and harsh hiss above 6 kHz filtered out of pink + brown (white stays raw, like in the studies) · all 3 colours matched in loudness.</p>
+      <p>👂 keep it safe: if u can't hear someone talking at arm's length, it's too loud. above 70% u'll see a warning.</p>
+    </details>
+  </section>
+  <section class="wins" id="wins" hidden><h3>🏆 W's today — u ate</h3><div class="list" id="winList"></div></section>
+</div>
+
+<button class="nzchip" id="nzChip" type="button" hidden></button>
+<button class="fab" id="fab" title="Add task (N)">+</button>
+<canvas id="fx"></canvas>
+<div class="toasts" id="toasts"></div>
+
+<!-- Quick add -->
+<div class="overlay" id="addOv">
+  <form class="modal" id="addForm" autocomplete="off">
+    <h3>brain dump 🧠</h3>
+    <input type="text" id="fTask" placeholder="what's living rent-free in ur head?" maxlength="200" required>
+    <label>how cooked r u if u miss it?</label>
+    <div class="seg" id="fDanger">
+      <button type="button" data-v="Critical" style="--sc:var(--crit)">💀 critical af</button>
+      <button type="button" data-v="High" style="--sc:var(--high)">🔥 high key</button>
+      <button type="button" data-v="Medium" style="--sc:var(--med)" class="on">😐 mid</button>
+      <button type="button" data-v="Low" style="--sc:var(--low)">🌱 low key</button>
+    </div>
+    <label>deadline — guess if u gotta. fake deadline &gt; no deadline</label>
+    <div class="seg" id="fWhen">
+      <button type="button" data-q="1h">in 1 hr</button>
+      <button type="button" data-q="18">today 6pm</button>
+      <button type="button" data-q="21">tonight 9pm</button>
+      <button type="button" data-q="tom">tmrw 10am</button>
+      <button type="button" data-q="3d">in 3 days</button>
+      <button type="button" data-q="mon">next mon</button>
+    </div>
+    <input type="datetime-local" id="fDl" style="margin-top:8px">
+    <label>vibe / category (optional)</label>
+    <div class="seg" id="fCat">
+      <button type="button" data-v="Work">Work</button><button type="button" data-v="Money">Money</button>
+      <button type="button" data-v="Admin">Admin</button><button type="button" data-v="Health">Health</button>
+      <button type="button" data-v="Personal">Personal</button><button type="button" data-v="Home">Home</button>
+    </div>
+    <div class="foot">
+      <button type="button" class="btn ghost" id="addCancel">nvm</button>
+      <button type="submit" class="btn done">lock it in 🔒</button>
+    </div>
+    <div class="hint">pro tip: hit <b>N</b> anywhere to open this. <b>enter</b> saves.</div>
+  </form>
+</div>
+
+<!-- Goldilocks finder -->
+<div class="overlay" id="gfOv">
+  <div class="gfbox" id="gfBox">
+    <div class="eyebrow">🎯 goldilocks finder</div>
+    <div id="gfIntro">
+      <h2>find ur noise sweet spot</h2>
+      <p>4 rounds × 30 sec. each round plays a different noise level (one is silence), in random order.</p>
+      <p>letters flash fast. <b>tap the screen or hit space ONLY when u see X.</b> the level where u score best = ur goldilocks zone.</p>
+      <p class="gfnote">before u start: put on headphones or set ur volume to where u'd normally keep it — and leave it there. noise colour: <b id="gfColor"></b> (change it in the noise lab).</p>
+      <div class="foot"><button class="btn done" id="gfStart" type="button">let's go 🔒</button><button class="btn ghost" id="gfExit1" type="button">nvm</button></div>
+    </div>
+    <div id="gfRun" hidden>
+      <div class="gfround" id="gfRound"></div>
+      <div class="gfletter mono" id="gfLetter"></div>
+      <div class="gfhint">tap / space on <b>X</b> only</div>
+      <div class="pmeter"><i id="gfProg"></i></div>
+      <button class="btn ghost" id="gfAbort" type="button">stop test</button>
+    </div>
+    <div id="gfRes" hidden>
+      <h2 id="gfHead"></h2>
+      <div class="gfbars" id="gfBars"></div>
+      <p id="gfMsg"></p>
+      <div class="foot"><button class="btn done" id="gfApply" type="button">use this level</button><button class="btn go" id="gfAgain" type="button">run again</button><button class="btn ghost" id="gfExit2" type="button">close</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Meltdown -->
+<div class="overlay melt" id="meltOv">
+  <div class="meltbox">
+    <div class="siren">🚨</div>
+    <div class="eyebrow">meltdown</div>
+    <h2 id="meltTask"></h2>
+    <div class="meltT mono" id="meltT"></div>
+    <p>under 5 min. don't think. just do the first tiny step.</p>
+    <div class="foot">
+      <button class="btn done" id="meltGo">▶ i'm on it</button>
+      <button class="btn go" id="meltDone">✅ already done</button>
+      <button class="btn ghost" id="meltSnooze">5 more min</button>
+    </div>
+  </div>
+</div>
+
+<!-- Focus mode -->
+<div class="overlay" id="focusOv">
+  <div class="focusbox">
+    <div class="eyebrow">🎧 lock-in mode — nothing else exists</div>
+    <h2 id="fcTitle"></h2>
+    <div class="dl" id="fcDl"></div>
+    <div class="ringwrap">
+      <svg width="240" height="240" viewBox="0 0 240 240">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c6ff3d"/><stop offset="1" stop-color="#ff3d7f"/></linearGradient></defs>
+        <circle class="track" cx="120" cy="120" r="105"/>
+        <circle class="prog" id="ring" cx="120" cy="120" r="105" stroke-dasharray="659.7" stroke-dashoffset="0"/>
+      </svg>
+      <div class="t" id="sprintT">15:00</div>
+    </div>
+    <div class="seg" id="sprintLen">
+      <button type="button" data-m="5">just 5 min (trust)</button>
+      <button type="button" data-m="15" class="on">15 min</button>
+      <button type="button" data-m="25">25 min</button>
+      <button type="button" data-m="45">45 min</button>
+    </div>
+    <div class="foot">
+      <button class="btn focus" id="sprintGo">▶ start sprint</button>
+      <button class="btn done" id="fcDone">✅ ate. done.</button>
+      <button class="btn go" id="brownBtn" type="button">🎧 focus noise</button>
+      <button class="btn ghost" id="fcExit">bounce</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================== CONFIG ================== */
+const IS_GAS = !!(window.google && google.script && google.script.run);
+const H = 3600e3, MIN = 60e3;
+const W = {Critical:4, High:3, Medium:2, Low:1};
+const DCOL = {Critical:'#ff3d7f', High:'#ff9f1c', Medium:'#ffe14d', Low:'#c6ff3d'};
+const ICON = {Critical:'💀', High:'🔥', Medium:'😐', Low:'🌱'};
+const LABEL = {Critical:'critical af', High:'high key', Medium:'mid', Low:'low key'};
+const LANES = [
+  ['overdue','😵 overdue (cooked)'], ['d1','⏰ next 24 hrs'], ['d3','⚡ next 3 days'],
+  ['d7','📅 this week'], ['later','🔭 later'], ['none','🫧 no deadline']
+];
+const PRAISE = ['u ate that. no crumbs. 💅','main character energy fr','that\'s a W. stack another?','slay. one less thing living rent-free 🧠',
+  'dopamine unlocked 🔓','future u is screaming thank u','not u being productive?? iconic','boss fight cleared 🎮',
+  'brain RAM freed up. we love to see it','+1000 aura ✨'];
+
+let tasks = [], soundMode = 'full', combo = 0, lastDoneAt = 0, nagCount = 0, skip = 0, lastSig = '', known = new Set(), alarmed = new Set(),
+    seenCards = new Set(), booted = false, lastWins = 0;
+try { const m = localStorage.getItem('dz_sound'); soundMode = m === '0' ? 'off' : (m === 'soft' || m === 'off' || m === 'full') ? m : 'full'; } catch (e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ================== DATA LAYER ================== */
+function demoData() {
+  const n = Date.now(); let r = 2;
+  const mk = (task, danger, h, status = 'To do', category = '', notes = '') =>
+    ({row: r++, task, danger, deadline: h == null ? null : n + h * H, status, category, notes,
+      doneOn: status === 'Done' ? n - 2 * H : null});
+  return [
+    mk('Pay credit card bill', 'Critical', -3, 'To do', 'Money', 'auto-pay is OFF — late fee is not the vibe'),
+    mk('Book doctor appointment (watch this go overdue)', 'High', 1.5 / 60, 'To do', 'Health'),
+    mk('Reply to landlord about rent', 'High', 2.4, 'Doing', 'Home'),
+    mk('Pay electricity bill', 'Critical', .75, 'To do', 'Money', 'power cut if unpaid'),
+    mk('Submit project report', 'Critical', 20, 'To do', 'Work', 'Draft is 70% done'),
+    mk('Renew vehicle insurance', 'Critical', 60, 'To do', 'Admin'),
+    mk('Call mom', 'Medium', 30, 'To do', 'Personal'),
+    mk('Return Amazon package', 'Medium', 96, 'To do', 'Admin'),
+    mk('Dentist follow-up', 'Low', 240, 'To do', 'Health'),
+    mk('Clean desk', 'Low', null, 'To do', 'Home'),
+    mk('Send invoice to client', 'High', -30, 'Done', 'Money'),
+    mk('Gym', 'Low', -5, 'Done', 'Health'),
+  ];
+}
+let demo = IS_GAS ? null : demoData();
+const demoApi = {
+  getTasks: () => JSON.parse(JSON.stringify(demo)),
+  addTask: t => { demo.push({row: Math.max(1, ...demo.map(x => x.row)) + 1, status: 'To do', notes: '', doneOn: null, ...t}); return demoApi.getTasks(); },
+  setStatus: (row, s) => { const t = demo.find(x => x.row === row); if (t) { t.status = s; t.doneOn = s === 'Done' ? Date.now() : null; } return demoApi.getTasks(); }
+};
+function api(fn, ...args) {
+  if (!IS_GAS) return new Promise(res => setTimeout(() => res(demoApi[fn](...args)), 120));
+  return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+}
+
+async function load(manual) {
+  if (manual) { $('#refBtn').classList.remove('spin'); void $('#refBtn').offsetWidth; $('#refBtn').classList.add('spin'); }
+  try {
+    setData(await api('getTasks'));
+    $('#err').style.display = 'none';
+    if (manual) { sfx.pop(880); toast('synced ✨', 'fresh from ur sheet.', 'var(--ok)'); }
+  } catch (e) {
+    $('#err').style.display = 'block';
+    $('#err').innerHTML = '⚠️ Couldn\'t read the sheet: ' + esc(e && e.message || e) + ' — check the tab is named <b>Tasks</b>, then hit ⟳.';
+  }
+}
+
+function setData(list) {
+  tasks = list || [];
+  const now = Date.now();
+  // silently mark thresholds already passed for tasks we're seeing for the first time
+  tasks.forEach(t => {
+    const k = t.row + '|' + t.deadline;
+    if (!known.has(k)) { known.add(k); if (t.deadline) THRESH.forEach(([id, ms]) => { if (t.deadline - now <= ms) alarmed.add(k + '|' + id); }); }
+  });
+  render();
+}
+
+/* ================== LOGIC ================== */
+const open = () => tasks.filter(t => t.status !== 'Done');
+function score(t, now = Date.now()) {
+  const w = W[t.danger] || 2;
+  if (!t.deadline) return w * 0.5 + (t.status === 'Doing' ? 1 : 0);
+  const h = (t.deadline - now) / H;
+  const base = h < 0 ? 100000 + w * 1000 - h : (w * 100) / Math.max(h, 0.25);
+  return base * (t.status === 'Doing' ? 1.15 : 1);
+}
+function laneOf(t, now = Date.now()) {
+  if (!t.deadline) return 'none';
+  const h = (t.deadline - now) / H;
+  return h < 0 ? 'overdue' : h <= 24 ? 'd1' : h <= 72 ? 'd3' : h <= 168 ? 'd7' : 'later';
+}
+function fmtLeft(ms) {
+  const late = ms < 0; let s = Math.floor(Math.abs(ms) / 1000);
+  const d = Math.floor(s / 86400); s %= 86400;
+  const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); s %= 60;
+  const p = n => String(n).padStart(2, '0');
+  const core = d >= 7 ? `${d}d ${h}h` : (d ? d + 'd ' : '') + `${p(h)}:${p(m)}:${p(s)}`;
+  return late ? `+${core} late 💀` : core;
+}
+const fuseW = t => !t.deadline ? 100 : Math.max(0, Math.min(100, (t.deadline - Date.now()) / (168 * H) * 100));
+function fmtDate(ts) {
+  if (!ts) return 'No deadline';
+  return new Date(ts).toLocaleString(undefined, {weekday:'short', day:'numeric', month:'short', hour:'numeric', minute:'2-digit'});
+}
+function threat() {
+  const now = Date.now(); let v = 0;
+  open().forEach(t => {
+    const l = laneOf(t, now), w = W[t.danger] || 2;
+    if (l === 'overdue') v += [0, 6, 14, 26, 42][w];
+    else if (l === 'd1') v += [0, 2, 6, 12, 22][w];
+    else if (l === 'd3') v += [0, 0, 2, 5, 9][w];
+  });
+  return Math.min(100, v);
+}
+
+/* ================== RENDER ================== */
+function render() {
+  const now = Date.now(), op = open().sort((a, b) => score(b, now) - score(a, now));
+  $('#sub').textContent = `${op.length} open · ${IS_GAS ? 'live from google sheets' : 'demo mode'}`;
+  $('#demoChip').hidden = IS_GAS;
+
+  // stats
+  const over = op.filter(t => laneOf(t, now) === 'overdue').length;
+  setStat($('#stOver .v'), over); $('#stOver').classList.toggle('hot', over > 0);
+  setStat($('#stDay'), op.filter(t => laneOf(t, now) === 'd1').length);
+  setStat($('#stCrit'), op.filter(t => t.danger === 'Critical').length);
+  const sod = new Date(); sod.setHours(0, 0, 0, 0);
+  const wins = tasks.filter(t => t.status === 'Done' && t.doneOn && t.doneOn >= sod.getTime());
+  setStat($('#stWins'), wins.length);
+
+  renderHero(op);
+
+  // lanes
+  const by = {}; LANES.forEach(([k]) => by[k] = []);
+  op.forEach(t => by[laneOf(t, now)].push(t));
+  let delay = 0;
+  $('#lanes').innerHTML = LANES.map(([k, label]) => {
+    if (k === 'none' && !by[k].length) return '';
+    const cards = by[k].map(t => {
+      const key = t.row + '|' + t.task, isNew = !seenCards.has(key); seenCards.add(key);
+      const late = k === 'overdue';
+      return `<article class="card d-${esc(t.danger)} ${late ? 'late' : ''} ${isNew ? 'enter' : ''}" data-row="${t.row}"
+        style="--dc:${DCOL[t.danger] || DCOL.Medium};${isNew ? `--delay:${(delay++ * 0.04).toFixed(2)}s` : ''}">
+        <div class="ctop"><span class="badge">${ICON[t.danger] || ''} ${LABEL[t.danger] || esc(t.danger)}</span>
+          ${t.status === 'Doing' ? '<span class="doing-tag">● on it</span>' : ''}<span class="cat">${esc(t.category)}</span></div>
+        <h4>${esc(t.task)}</h4>
+        ${t.notes ? `<div class="note">${esc(t.notes)}</div>` : ''}
+        ${t.deadline ? `<div class="cd" data-dl="${t.deadline}">${fmtLeft(t.deadline - now)}</div>
+          <div class="fuse"><i data-fuse="${t.deadline}" style="width:${fuseW(t)}%"></i></div>` :
+          '<div class="cd" style="color:var(--mut)">no deadline… give it one bestie</div>'}
+        <div class="acts">
+          ${t.status === 'Doing' ? '<button data-act="todo">⏸ pause</button>' : '<button data-act="start">▶ start</button>'}
+          <button class="d" data-act="done">✅ done</button></div>
+      </article>`;
+    }).join('');
+    return `<section class="lane ${by[k].length ? 'has' : ''}" data-lane="${k}">
+      <header><span class="dot"></span>${label}<b>${by[k].length}</b></header>
+      ${cards || '<div class="empty">' + (k === 'overdue' ? 'nothing overdue. we\'re so back 😌' : 'empty. peaceful.') + '</div>'}</section>`;
+  }).join('');
+
+  // wins
+  $('#wins').hidden = !wins.length;
+  $('#winList').innerHTML = wins.sort((a, b) => b.doneOn - a.doneOn).map(t =>
+    `<span class="trophy">✅ ${esc(t.task)} <button data-act="undo" data-row="${t.row}" title="undo">↺</button></span>`).join('');
+
+  lastSig = op.map(t => t.row + ':' + laneOf(t, now)).join(',');
+  tickThreat();
+}
+
+function setStat(el, v) {
+  if (el.textContent !== String(v)) { el.textContent = v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+
+let heroTask = null;
+function renderHero(op) {
+  const hero = $('#hero');
+  if (!op.length) {
+    heroTask = null; hero.className = 'hero calm'; hero.style.setProperty('--hc', 'var(--ok)');
+    hero.innerHTML = `<div class="hero-in"><div><div class="eyebrow"><span class="pulse"></span>all clear</div>
+      <h2>nothing's on fire. go touch grass 🌱</h2><div class="meta">or brain dump the next thing w the + button.</div></div></div>`;
+    return;
+  }
+  const t = op[skip % op.length]; heroTask = t;
+  const late = t.deadline && t.deadline < Date.now();
+  hero.className = 'hero' + (late ? ' late' : '');
+  hero.style.setProperty('--hc', late ? 'var(--crit)' : DCOL[t.danger] || DCOL.Medium);
+  hero.style.setProperty('--dc', late ? 'var(--crit)' : DCOL[t.danger] || DCOL.Medium);
+  hero.innerHTML = `<div class="hero-in">
+    <div><div class="eyebrow"><span class="pulse"></span>${skip % op.length ? 'side quest #' + (skip % op.length + 1) : 'main quest rn'}</div>
+      <h2>${esc(t.task)}</h2>
+      <div class="meta"><span class="badge" style="--dc:${DCOL[t.danger]}">${ICON[t.danger] || ''} ${LABEL[t.danger] || esc(t.danger)}</span>
+        <span>${esc(fmtDate(t.deadline))}</span>${t.category ? '<span>· ' + esc(t.category) + '</span>' : ''}
+        ${t.status === 'Doing' ? '<span class="doing-tag">● on it rn</span>' : ''}</div>
+      ${t.notes ? `<div class="meta" style="margin-top:6px">📝 ${esc(t.notes)}</div>` : ''}</div>
+    <div class="big" ${t.deadline ? `data-dl="${t.deadline}"` : ''}>${t.deadline ? fmtLeft(t.deadline - Date.now()) : '∞'}
+      <small>${late ? 'past deadline 💀' : 'time left'}</small></div>
+    <div class="row2" style="flex-direction:column;align-items:stretch">
+      ${t.deadline ? `<div class="fuse"><i data-fuse="${t.deadline}" style="width:${fuseW(t)}%"></i></div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn done" data-act="done" data-row="${t.row}">✅ ate. done.</button>
+        <button class="btn focus" data-act="focus">🎧 lock in</button>
+        ${t.status === 'Doing' ? '' : `<button class="btn go" data-act="start" data-row="${t.row}">▶ ok starting</button>`}
+        ${op.length > 1 ? '<button class="btn ghost" data-act="skip">not feeling it → next</button>' : ''}
+      </div></div></div>`;
+}
+
+/* small re-render of the big countdown label without rebuilding hero */
+function tick() {
+  const now = Date.now();
+  document.querySelectorAll('[data-dl]').forEach(el => {
+    const ms = +el.dataset.dl - now, small = el.querySelector('small');
+    if (small) { el.firstChild.nodeValue = fmtLeft(ms); } else el.textContent = fmtLeft(ms);
+  });
+  document.querySelectorAll('[data-fuse]').forEach(el => el.style.width = Math.max(0, Math.min(100, (+el.dataset.fuse - now) / (168 * H) * 100)) + '%');
+  $('#clock').textContent = new Date().toLocaleString(undefined, {weekday:'short', hour:'numeric', minute:'2-digit', second:'2-digit'});
+  const sig = open().sort((a, b) => score(b, now) - score(a, now)).map(t => t.row + ':' + laneOf(t, now)).join(',');
+  if (sig !== lastSig) render();
+  checkAlarms();
+  focusTick();
+  panicTick();
+}
+
+function tickThreat() {
+  const v = threat();
+  const [lbl, col] = v >= 70 ? ['fully cooked 💀', '#ff3d7f'] : v >= 40 ? ['kinda cooked', '#ff9f1c'] : v >= 15 ? ['lowkey stressed', '#ffe14d'] : ['vibing ✌️', '#c6ff3d'];
+  $('#threatLbl').textContent = lbl; $('#threatBar').style.width = Math.max(4, v) + '%';
+  document.documentElement.style.setProperty('--tc', col);
+  document.body.classList.toggle('red', v >= 70);
+  bgColor = col;
+}
+
+/* ================== ALARMS ================== */
+const THRESH = [['due', 0], ['10m', 10 * MIN], ['60m', 60 * MIN]];
+function checkAlarms() {
+  if (!booted) return;
+  const now = Date.now();
+  open().forEach(t => {
+    if (!t.deadline) return;
+    for (const [id, ms] of THRESH) {
+      const key = t.row + '|' + t.deadline + '|' + id;
+      if (t.deadline - now <= ms && !alarmed.has(key)) {
+        alarmed.add(key);
+        if (id === 'due') { sfx.due(); jolt(); toast('💀 deadline just passed', t.task, 'var(--crit)', 7000); }
+        else if (id === '10m') { sfx.warnMid(); toast('⏳ 10 min left bestie', t.task, 'var(--high)', 6000); }
+        else { sfx.warnSoft(); toast('🕐 1 hr left. no pressure (pressure)', t.task, 'var(--med)'); }
+        break;
+      }
+    }
+  });
+}
+function jolt() {
+  document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+  document.querySelectorAll('.card.late').forEach(c => { c.classList.remove('jolt'); void c.offsetWidth; c.classList.add('jolt'); });
+}
+// Gentle nag every 15 min while something critical/high is overdue
+setInterval(() => {
+  const o = open().filter(t => laneOf(t) === 'overdue' && W[t.danger] >= 3);
+  if (o.length) { sfx.nag(nagCount++); jolt(); toast('👀 still overdue… just saying', o.map(t => t.task).slice(0, 3).join(' · '), 'var(--crit)', 6000); }
+}, 15 * MIN);
+
+/* ================== ACTIONS ================== */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act, row = +(b.dataset.row || b.closest('[data-row]')?.dataset.row);
+  if (act === 'done') return complete(row, b);
+  if (act === 'pstart' && panicTarget) { sfx.powerUp(); mutate(panicTarget.row, 'Doing'); calmToast(); return; }
+  if (act === 'psnooze') return snoozePanic(10);
+  if (act === 'start') { if (panicTarget && panicTarget.row === row) calmToast(); sfx.powerUp(); mutate(row, 'Doing'); toast('▶ let\'s gooo', 'just the first tiny step. no cap.', '#60a5fa'); }
+  if (act === 'todo') { sfx.rewind(); mutate(row, 'To do'); }
+  if (act === 'undo') { sfx.rewind(); mutate(row, 'To do'); }
+  if (act === 'skip') { skip++; sfx.swoosh(); renderHero(open().sort((a, c) => score(c) - score(a))); }
+  if (act === 'focus') openFocus();
+});
+
+async function mutate(row, status) {
+  const t = tasks.find(x => x.row === row); if (!t) return;
+  t.status = status; t.doneOn = status === 'Done' ? Date.now() : null; render();
+  try { setData(await api('setStatus', row, status)); } catch (e) { toast('sync flopped 😬', 'saved on screen only — hit ⟳.', 'var(--crit)'); }
+}
+
+function complete(row, el) {
+  const card = document.querySelector(`.card[data-row="${row}"]`);
+  const src = (el && el.getBoundingClientRect()) || {left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0};
+  const now = Date.now();
+  combo = now - lastDoneAt < 20 * MIN ? combo + 1 : 1; lastDoneAt = now;
+  const jackpot = Math.random() < .18 || (combo > 1 && combo % 4 === 0);
+  confetti(src.left + src.width / 2, src.top + src.height / 2, heroTask && heroTask.row === row ? 220 : 120);
+  if (jackpot) setTimeout(() => { confetti(innerWidth * .25, innerHeight * .4, 160); confetti(innerWidth * .75, innerHeight * .4, 160); }, 450);
+  sfx.reward(combo, jackpot);
+  document.body.classList.remove('flash'); void document.body.offsetWidth; document.body.classList.add('flash');
+  const praise = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+  if (jackpot) toast('🎰 jackpot!!', 'bonus round unlocked. ' + praise, 'var(--med)', 5000);
+  else if (combo > 1) toast(`🔥 combo x${combo}`, praise + ' keep the streak alive (20 min)', 'var(--high)');
+  else toast('✅ W secured', praise, 'var(--ok)');
+  skip = 0;
+  if (card) { card.classList.add('boom'); setTimeout(() => mutate(row, 'Done'), 420); } else mutate(row, 'Done');
+  if (focusRow === row) closeFocus();
+}
+
+/* ================== QUICK ADD ================== */
+let fDanger = 'Medium', fCat = '';
+function openAdd() { $('#addOv').classList.add('open'); sfx.swoosh(); setTimeout(() => $('#fTask').focus(), 50); }
+function closeAdd() { $('#addOv').classList.remove('open'); }
+$('#fab').onclick = openAdd;
+$('#addCancel').onclick = closeAdd;
+$('#addOv').onclick = e => { if (e.target.id === 'addOv') closeAdd(); };
+$('#fDanger').onclick = e => { const b = e.target.closest('button'); if (!b) return; fDanger = b.dataset.v; [...$('#fDanger').children].forEach(x => x.classList.toggle('on', x === b)); sfx.select(W[fDanger]); };
+$('#fCat').onclick = e => { const b = e.target.closest('button'); if (!b) return; fCat = fCat === b.dataset.v ? '' : b.dataset.v; [...$('#fCat').children].forEach(x => x.classList.toggle('on', x.dataset.v === fCat)); sfx.pop(660); };
+$('#fWhen').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = new Date(), q = b.dataset.q;
+  if (q === '1h') d.setTime(d.getTime() + H);
+  else if (q === '18' || q === '21') { d.setHours(+q, 0, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); }
+  else if (q === 'tom') { d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+  else if (q === '3d') { d.setDate(d.getDate() + 3); d.setHours(18, 0, 0, 0); }
+  else if (q === 'mon') { d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(10, 0, 0, 0); }
+  const p = n => String(n).padStart(2, '0');
+  $('#fDl').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  [...$('#fWhen').children].forEach(x => x.classList.toggle('on', x === b)); sfx.pop(780);
+};
+$('#addForm').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName === 'BUTTON' && e.target.type === 'button') { e.preventDefault(); $('#addForm').requestSubmit(); }
+});
+$('#fDl').oninput =() => [...$('#fWhen').children].forEach(x => x.classList.remove('on'));
+$('#addForm').onsubmit = async e => {
+  e.preventDefault();
+  const task = $('#fTask').value.trim(); if (!task) return;
+  const dl = $('#fDl').value ? new Date($('#fDl').value).getTime() : null;
+  const payload = {task, danger: fDanger, deadline: dl, category: fCat};
+  closeAdd(); sfx.vault();
+  const r = $('#fab').getBoundingClientRect(); confetti(r.left + 33, r.top + 33, 50);
+  toast('🔒 locked in', task + (dl ? ' — ' + fmtDate(dl) : ''), 'var(--violet)');
+  $('#fTask').value = ''; $('#fDl').value = ''; [...$('#fWhen').children, ...$('#fCat').children].forEach(x => x.classList.remove('on')); fCat = '';
+  try { setData(await api('addTask', payload)); }
+  catch (err) { toast('save flopped 😬', String(err && err.message || err), 'var(--crit)', 7000); }
+};
+
+/* ================== FOCUS MODE ================== */
+let focusRow = null, sprintLen = 15 * MIN, sprintEnd = null, sprintLeft = 15 * MIN, sprintStartLeft = 0;
+function openFocus() {
+  if (!heroTask) return;
+  focusRow = heroTask.row; $('#fcTitle').textContent = heroTask.task;
+  $('#fcDl').textContent = heroTask.deadline ? 'due ' + fmtDate(heroTask.deadline) : 'no deadline';
+  sprintEnd = null; sprintLeft = sprintLen; drawRing();
+  $('#sprintGo').textContent = '▶ start sprint';
+  $('#focusOv').classList.add('open'); sfx.swoosh();
+}
+function closeFocus() { $('#focusOv').classList.remove('open'); focusRow = null; sprintEnd = null; }
+$('#fcExit').onclick = closeFocus;
+$('#fcDone').onclick = e => complete(focusRow, e.currentTarget);
+$('#sprintLen').onclick = e => {
+  const b = e.target.closest('button'); if (!b || sprintEnd) return;
+  sprintLen = sprintLeft = +b.dataset.m * MIN; [...$('#sprintLen').children].forEach(x => x.classList.toggle('on', x === b));
+  drawRing(); sfx.pop(600);
+};
+$('#sprintGo').onclick = () => {
+  if (sprintEnd) { sprintLeft = sprintEnd - Date.now(); sprintEnd = null; $('#sprintGo').textContent = '▶ resume'; sfx.rewind(); }
+  else { sprintEnd = Date.now() + sprintLeft; $('#sprintGo').textContent = '⏸ pause'; sfx.powerUp(); sprintStartLeft = sprintLeft;
+    if (focusRow) { const t = tasks.find(x => x.row === focusRow); if (t && t.status !== 'Doing') mutate(focusRow, 'Doing'); } }
+};
+function focusTick() {
+  if (!sprintEnd) return;
+  const prev = sprintLeft;
+  sprintLeft = sprintEnd - Date.now();
+  const elapsedPrev = sprintLen - prev, elapsedNow = sprintLen - sprintLeft;
+  if (Math.floor(elapsedNow / (5 * MIN)) > Math.floor(elapsedPrev / (5 * MIN)) && sprintLeft > 15000) sfx.anchor();   // every 5 min
+  if (sprintLeft > 0 && sprintLeft <= 10000) sfx.tick(sprintLeft <= 3000);                                         // final countdown
+  if (sprintLeft <= 0) { sprintEnd = null; sprintLeft = sprintLen; $('#sprintGo').textContent = '▶ one more round';
+    sfx.reward(1, true); confetti(innerWidth / 2, innerHeight / 2, 140); toast('⏱ sprint done', 'touch grass for 5. drink water. then: done or one more round?', 'var(--violet)', 8000); }
+  drawRing();
+}
+function drawRing() {
+  const s = Math.max(0, Math.ceil(sprintLeft / 1000));
+  $('#sprintT').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  $('#ring').style.strokeDashoffset = (659.7 * (1 - sprintLeft / sprintLen)).toFixed(1);
+}
+
+/* ================== KEYBOARD ================== */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeAdd(); closeFocus(); closeMelt(); gfClose(); return; }
+  if ($('#gfOv').classList.contains('open')) return;
+  if (/input|textarea/i.test(e.target.tagName)) return;
+  if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openAdd(); }
+  if (e.key === 'f' || e.key === 'F') openFocus();
+});
+
+/* ================== SOUND ENGINE — designed for the ADHD brain ==================
+   All sounds are synthesized live (no audio files), run through a compressor + a soft
+   reverb so they feel "premium" instead of beepy.
+   Psychology baked in:
+   • Variable reward: "done" picks a random melody + random jackpots → the brain keeps
+     anticipating, so the reward doesn't go stale (habituation is fast in ADHD).
+   • Combo streak: each task finished within 20 min of the last plays a semitone higher.
+     Momentum you can HEAR → "one more" feeling.
+   • Escalation ladder, never harsh: 1 hr = soft bell, 10 min = brighter bell run,
+     deadline = distinct "uh-oh" with a low thump. Salient, but no ear-piercing buzzers.
+   • Nags rotate timbre so they don't fade into background noise.
+   • No "fail" buzzers anywhere: skipping/pausing sounds neutral (no shame loop).
+   • Focus mode: optional brown noise (many ADHD folks find steady noise helps focus)
+     + soft "time anchor" chimes every 5 min to fight time blindness
+     + gentle ticks in the final 10 seconds.
+   • Phones also vibrate (Android) — sound + touch is harder to miss.
+   • 3 levels: full / soft (sensory-friendly) / off.
+*/
+const VOL = {full: 1, soft: .38, off: 0};
+const sfx = (() => {
+  let ac = null, master, verb, droneNodes = null;
+  const st = n => Math.pow(2, n / 12);
+  const on = () => soundMode !== 'off';
+  function ctx() {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = .003; comp.release.value = .25;
+      master = ac.createGain(); master.gain.value = VOL[soundMode];
+      master.connect(comp); comp.connect(ac.destination);
+      verb = ac.createConvolver(); verb.buffer = impulse(2.4, 3); const vg = ac.createGain(); vg.gain.value = .32;
+      verb.connect(vg); vg.connect(master);
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function impulse(sec, decay) {
+    const len = Math.floor(ac.sampleRate * sec), b = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    return b;
+  }
+  function out(node, wet, pan) {
+    let n = node;
+    if (pan && ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = pan; node.connect(p); n = p; }
+    n.connect(master);
+    if (wet) { const s = ac.createGain(); s.gain.value = wet; n.connect(s); s.connect(verb); }
+  }
+  function voice({f, t = 0, dur = .3, type = 'sine', vol = .2, a = .005, slide, wet = .25, detune = 0, pan = 0}) {
+    if (!on()) return; const c = ctx(), t0 = c.currentTime + t;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t0); o.detune.value = detune;
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + a); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g); out(g, wet, pan); o.start(t0); o.stop(t0 + dur + .05);
+  }
+  function bell(f, t = 0, dur = 1.2, vol = .16, wet = .4, pan = 0) {     // FM bell: glassy, "crystal" reward tone
+    if (!on()) return; const c = ctx(), t0 = c.currentTime + t;
+    const car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(), g = c.createGain();
+    car.frequency.value = f; mod.frequency.value = f * 3.5;
+    mg.gain.setValueAtTime(f * 2.2, t0); mg.gain.exponentialRampToValueAtTime(1, t0 + dur * .6);
+    mod.connect(mg); mg.connect(car.frequency);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + .004); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    car.connect(g); out(g, wet, pan); car.start(t0); mod.start(t0); car.stop(t0 + dur + .05); mod.stop(t0 + dur + .05);
+  }
+  function noise({t = 0, dur = .3, vol = .12, type = 'bandpass', f0 = 400, f1 = 3000, q = 1, wet = .2}) {
+    if (!on()) return; const c = ctx(), t0 = c.currentTime + t;
+    const len = Math.ceil(c.sampleRate * dur), b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = b; fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f0, t0); fl.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + dur * .3); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    s.connect(fl); fl.connect(g); out(g, wet); s.start(t0);
+  }
+  const thump = (t = 0, vol = .5) => voice({f: 150, t, dur: .28, vol, slide: 42, wet: .05, a: .002});   // felt more than heard
+  const buzz = p => { try { if (on() && navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
+
+  return {
+    unlock() { try { ctx(); this.loadNoiseWorklet(); } catch (e) {} },
+    applyVolume() { if (master) master.gain.setTargetAtTime(VOL[soundMode], ac.currentTime, .05); },
+
+    /* tiny, tactile UI sounds */
+    pop(f = 700) { voice({f: f * 1.6, dur: .09, vol: .16, slide: f * .7, wet: .08, a: .002}); },
+    select(level) { const f = [0, 392, 494, 587.33, 783.99][level] || 494; voice({f, dur: .2, type: 'triangle', vol: .14, wet: .15}); voice({f: f * 2, t: .04, dur: .15, vol: .05, wet: .2}); },
+    swoosh() { noise({dur: .32, vol: .09, f0: 500, f1: 4200, q: .8, wet: .25}); },
+    rewind() { voice({f: 900, dur: .22, type: 'triangle', vol: .09, slide: 320, wet: .2}); },   // neutral, not a "fail" sound
+
+    /* activation energy: sounds like a game starting */
+    powerUp() {
+      [0, 4, 7, 12].forEach((n, i) => voice({f: 329.63 * st(n), t: i * .06, dur: .22, type: 'square', vol: .045, wet: .2, pan: (i - 1.5) * .25}));
+      voice({f: 220, dur: .4, type: 'sawtooth', vol: .035, slide: 880, wet: .3});
+      noise({dur: .4, vol: .05, f0: 300, f1: 7000, wet: .35}); buzz(30);
+    },
+
+    /* capturing a task closes an open loop → satisfying "into the vault" */
+    vault() {
+      voice({f: 180, dur: .05, type: 'square', vol: .1, wet: 0}); thump(.04, .4);
+      noise({dur: .22, vol: .07, f0: 6000, f1: 600, wet: .3});
+      bell(1567.98, .1, .9, .09); bell(2093, .16, .8, .05, .5); buzz([15, 40, 15]);
+    },
+
+    /* the dopamine hit: random melody, pitch climbs with your combo, random jackpot */
+    reward(combo = 1, jackpot = false) {
+      const melodies = [[0, 4, 7, 12], [0, 7, 12, 16], [0, 4, 7, 11, 14], [0, 5, 9, 12], [0, 2, 4, 7, 12]];
+      const m = melodies[Math.floor(Math.random() * melodies.length)];
+      const base = 523.25 * st(Math.min(combo - 1, 12));
+      thump(0, .35);
+      m.forEach((n, i) => { bell(base * st(n), .05 + i * .065, 1.1, .13, .45, i % 2 ? .35 : -.35); voice({f: base * st(n), t: .05 + i * .065, dur: .22, type: 'triangle', vol: .06}); });
+      noise({t: .22, dur: .7, vol: .045, type: 'highpass', f0: 6000, f1: 10000, wet: .6});           // sparkle shimmer
+      if (combo > 1) voice({f: base * 2, t: .05 + m.length * .065, dur: .5, type: 'sine', vol: .07, slide: base * 4, wet: .4});  // "level up" swoop
+      if (jackpot) {
+        [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => bell(base * .5 * st(n), .5 + i * .07, 1.5, .11, .5, (i % 3 - 1) * .4));
+        voice({f: base * .5, t: .5, dur: 1.8, type: 'sawtooth', vol: .035, detune: 9, wet: .55});
+        voice({f: base * .5 * st(7), t: .5, dur: 1.8, type: 'sawtooth', vol: .035, detune: -9, wet: .55});
+        thump(.5, .45); buzz([40, 60, 40, 60, 140]);
+      } else buzz([25, 50, 60]);
+    },
+
+    /* escalation ladder — salient, never harsh */
+    warnSoft() { bell(880, 0, 1.1, .12); bell(1318.51, .2, 1.4, .1); buzz(60); },                                  // 1 hr left
+    warnMid() { [0, 4, 7].forEach((n, i) => bell(659.25 * st(n), i * .14, 1, .15)); voice({f: 1318.51, t: .42, dur: .55, type: 'triangle', vol: .09}); buzz([80, 80, 80]); },  // 10 min
+    due() {                                                                                                          // deadline passed: "uh-oh"
+      thump(0, .6); voice({f: 466.16, t: .02, dur: .3, type: 'square', vol: .06, slide: 440, wet: .3});
+      voice({f: 349.23, t: .3, dur: .7, type: 'square', vol: .06, slide: 329.63, wet: .35});
+      bell(233.08, .3, 1.8, .14, .5); thump(.3, .5); buzz([200, 100, 200, 100, 300]);
+    },
+    nag(i = 0) {                                                                                                     // rotates so it doesn't become wallpaper
+      const r = i % 3;
+      if (r === 0) this.warnMid();
+      else if (r === 1) { [783.99, 659.25, 783.99, 987.77].forEach((f, j) => voice({f, t: j * .12, dur: .16, type: 'triangle', vol: .11, pan: j % 2 ? .4 : -.4})); buzz([60, 60, 60]); }
+      else { bell(523.25, 0, 1.5, .15); bell(523.25 * st(6), .25, 1.5, .11); thump(0, .3); buzz(150); }
+    },
+
+    /* ---- panic sounds ---- */
+    heartbeat(pi = 0) {                       // lub-dub; low end + a harmonic so laptop/phone speakers can hear it
+      const v = .25 + .35 * pi;
+      voice({f: 62, dur: .16, vol: v, slide: 42, wet: .05, a: .003}); voice({f: 124, dur: .1, type: 'triangle', vol: v * .25, slide: 70, wet: 0, a: .003});
+      voice({f: 58, t: .17, dur: .2, vol: v * .75, slide: 38, wet: .05, a: .003}); voice({f: 116, t: .17, dur: .12, type: 'triangle', vol: v * .18, slide: 60, wet: 0, a: .003});
+    },
+    clock(alt, lvl) {                          // tick… tock… gets louder in meltdown
+      const f = alt ? 2200 : 1650;
+      noise({dur: .035, vol: lvl >= 3 ? .1 : .065, f0: f, f1: f * .9, q: 8, wet: .05}); voice({f: alt ? 1320 : 990, dur: .04, vol: .03, wet: 0, a: .001});
+    },
+    sting(lvl) {                               // one-shot when you enter a new panic level
+      if (lvl === 1) [0, 3, 7].forEach(n => voice({f: 220 * st(n), dur: 1.8, type: 'sawtooth', vol: .028, a: .6, wet: .55}));   // ominous minor swell
+      else if (lvl === 2) { [0, 1, 6].forEach(n => voice({f: 196 * st(n), dur: 1.5, type: 'sawtooth', vol: .04, a: .25, wet: .5, detune: (Math.random() - .5) * 24})); thump(0, .45); bell(311.13, 0, 1.6, .1); }  // dissonant cluster
+      else if (lvl === 3) this.meltdown();
+      else if (lvl === 4) this.due();
+    },
+    meltdown() {                               // siren sweep x2 + boom
+      thump(0, .6); [0, .45].forEach(t => voice({f: 500, t, dur: .42, type: 'triangle', vol: .1, slide: 1300, wet: .3}));
+      noise({t: .9, dur: .5, vol: .08, f0: 200, f1: 4000, wet: .3}); bell(233.08, .9, 1.6, .13, .5); buzz([300, 100, 300, 100, 300]);
+    },
+    drone(x) {                                 // rising tension bed in the last 10 min. x = 0..1, null = off
+      if (x == null || !on()) {
+        if (droneNodes) { const d = droneNodes; droneNodes = null; d.g.gain.setTargetAtTime(0, ac.currentTime, .3);
+          setTimeout(() => { [d.o1, d.o2, d.lfo].forEach(o => { try { o.stop(); } catch (e) {} }); }, 1500); }
+        return;
+      }
+      const c = ctx();
+      if (!droneNodes) {
+        const o1 = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(),
+              lfo = c.createOscillator(), lg = c.createGain(), trem = c.createGain();
+        o1.type = o2.type = 'sawtooth'; o2.detune.value = 14; f.type = 'lowpass'; f.frequency.value = 600; f.Q.value = 6;
+        trem.gain.value = .6; lfo.frequency.value = 2; lg.gain.value = .4; lfo.connect(lg); lg.connect(trem.gain);
+        g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(.03, c.currentTime + 2);
+        o1.connect(f); o2.connect(f); f.connect(trem); trem.connect(g); out(g, .4);
+        o1.start(); o2.start(); lfo.start(); droneNodes = {o1, o2, f, g, lfo};
+      }
+      const fr = 98 * Math.pow(2, x * 1.2), t = c.currentTime;
+      droneNodes.o1.frequency.setTargetAtTime(fr, t, .5); droneNodes.o2.frequency.setTargetAtTime(fr * 1.5, t, .5);
+      droneNodes.f.frequency.setTargetAtTime(500 + x * 2200, t, .5); droneNodes.lfo.frequency.setTargetAtTime(2 + x * 8, t, .5);
+      droneNodes.g.gain.setTargetAtTime(.025 + .03 * x, t, .5);
+    },
+
+    /* focus helpers */
+    anchor() { bell(1046.5, 0, .9, .06, .55); },                       // "5 more minutes went by" — time you can hear
+    tick(last) { voice({f: last ? 2400 : 1800, dur: .035, vol: last ? .08 : .05, wet: 0, a: .001}); },
+    /* ---- focus noise player (white / pink / brown), independent of alert volume ----
+       • Never repeats: noise is generated live, sample by sample, in an AudioWorklet.
+         Fallback if a browser blocks that: three loops of 13 / 17 / 23 s played together
+         (pattern repeats every ~85 min), each seam an equal-power crossfade (no click, no dip).
+       • Brown + pink: high-pass 35 Hz (removes rumble that wastes headroom) and a gentle
+         low-pass from 6 kHz (softens hiss). White stays unfiltered, as used in the studies.
+       • Fully independent L/R channels; no modulation; colours trimmed to equal loudness (LUFS). */
+    _nz: {bufs: {}, srcs: [], gain: null, an: null, color: null, wk: 0},
+    NZ_LOOPS: [13, 17, 23],
+    NZ_TRIM: {white: .6, pink: 1, brown: 1},                               // measured: equal LUFS across colours
+    noiseBuf(color) {
+      const c = ctx(), z = this._nz;
+      if (z.bufs[color]) return z.bufs[color];
+      z.bufs = {};                                                   // keep only one colour in memory (phones)
+      const sr = c.sampleRate, XF = Math.round(sr * 2);              // 2 s seam crossfade
+      const make = secs => {
+        const N = Math.round(sr * secs), b = c.createBuffer(2, N, sr), tmp = new Float32Array(N + XF);
+        for (let ch = 0; ch < 2; ch++) {
+          let l = 0, b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+          const warm = color === 'white' ? 0 : sr * 3;               // let the filters settle first
+          for (let i = -warm; i < N + XF; i++) {
+            const w = Math.random() * 2 - 1; let v;
+            if (color === 'white') v = w;
+            else if (color === 'pink') {                             // Paul Kellet's pink filter (−3 dB/oct)
+              b0 = .99886 * b0 + w * .0555179; b1 = .99332 * b1 + w * .0750759; b2 = .969 * b2 + w * .153852;
+              b3 = .8665 * b3 + w * .3104856; b4 = .55 * b4 + w * .5329522; b5 = -.7616 * b5 - w * .016898;
+              v = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * .5362; b6 = w * .115926;
+            } else { l = (l + .02 * w) / 1.02; v = l; }               // brown (−6 dB/oct)
+            if (i >= 0) tmp[i] = v;
+          }
+          const d = b.getChannelData(ch);
+          for (let i = 0; i < N; i++) d[i] = tmp[i];
+          for (let i = 0; i < XF; i++) {                            // equal-power seam: end flows into start
+            const t = i / XF; d[i] = tmp[i] * Math.sqrt(t) + tmp[N + i] * Math.sqrt(1 - t);
+          }
+          let rms = 0; for (let i = 0; i < N; i++) rms += d[i] * d[i]; rms = Math.sqrt(rms / N);
+          const k = .2 / (rms || 1); for (let i = 0; i < N; i++) d[i] *= k;
+        }
+        return b;
+      };
+      return (z.bufs[color] = this.NZ_LOOPS.map(make));
+    },
+    noiseGainFor: v => Math.pow(Math.max(0, Math.min(100, v)) / 100, 2),
+    noisePlay(color, vol) {
+      const c = ctx(), z = this._nz;
+      if (z.srcs.length && z.color === color) { this.noiseVol(vol); return true; }
+      if (z.srcs.length) this.noiseStop(.4);
+      const g = c.createGain(), trim = c.createGain();
+      trim.gain.value = this.NZ_TRIM[color] || 1;
+      let head = trim;
+      if (color !== 'white') {
+        const hp = c.createBiquadFilter(), hp2 = c.createBiquadFilter(), lp = c.createBiquadFilter();
+        hp.type = hp2.type = 'highpass'; hp.frequency.value = hp2.frequency.value = 35;
+        hp.Q.value = .54; hp2.Q.value = 1.31;                                 // 4th-order Butterworth, 24 dB/oct below 35 Hz
+        lp.type = 'lowpass'; lp.frequency.value = 6000; lp.Q.value = .5;     // soft 12 dB/oct roll-off
+        hp.connect(hp2); hp2.connect(lp); lp.connect(trim); head = hp;
+      }
+      let srcs;
+      if (z.wk === 2) {                                                      // live, never-repeating generator
+        const n = new AudioWorkletNode(c, 'dz-noise', {numberOfInputs: 0, outputChannelCount: [2], processorOptions: {color}});
+        n.connect(head); srcs = [{stop: () => n.disconnect(), node: n}];
+      } else srcs = this.noiseBuf(color).map(buf => {
+        const s = c.createBufferSource(), sg = c.createGain();
+        s.buffer = buf; s.loop = true; sg.gain.value = 1 / Math.sqrt(3);     // uncorrelated loops → same total level
+        s.connect(sg); sg.connect(head); return s;
+      });
+      if (!z.an) { z.an = c.createAnalyser(); z.an.fftSize = 256; z.an.smoothingTimeConstant = .8; }
+      g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(this.noiseGainFor(vol), c.currentTime + 1.5);
+      trim.connect(g); g.connect(c.destination); g.connect(z.an);
+      const t0 = c.currentTime + .02; srcs.forEach(s => s.start && s.start(t0, Math.random() * s.buffer.duration));
+      z.srcs = srcs; z.gain = g; z.color = color; return true;
+    },
+    noiseVol(vol) { const z = this._nz; if (z.gain) z.gain.gain.setTargetAtTime(this.noiseGainFor(vol), ac.currentTime, .12); },
+    noiseStop(fade = .35) {
+      const z = this._nz; if (!z.srcs.length) return false;
+      const ss = z.srcs, g = z.gain; g.gain.setTargetAtTime(0, ac.currentTime, fade);
+      setTimeout(() => { ss.forEach(s => { try { s.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} }, fade * 5000);
+      z.srcs = []; z.gain = z.color = null; return false;
+    },
+    noiseOn() { return this._nz.srcs.length > 0; },
+    noiseMode() { return this._nz.wk === 2 ? 'live' : 'loops'; },
+    loadNoiseWorklet() {                                                     // called once on the first tap
+      const c = ctx(), z = this._nz;
+      if (z.wk || !c.audioWorklet || !window.Blob) return;
+      z.wk = 1;
+      const code = `
+        const K = {white: .3464, pink: .1142, brown: 3.4768};
+        class DZNoise extends AudioWorkletProcessor {
+          constructor(o) { super(); this.c = o.processorOptions.color; this.k = K[this.c];
+            this.s = [0, 1].map(() => ({l: 0, b: [0, 0, 0, 0, 0, 0, 0]}));
+            for (let i = 0; i < 48000 * 3; i++) this.s.forEach(st => this.gen(st)); }   // settle filters
+          gen(st) {
+            const w = Math.random() * 2 - 1, b = st.b;
+            if (this.c === 'white') return w;
+            if (this.c === 'pink') {
+              b[0] = .99886 * b[0] + w * .0555179; b[1] = .99332 * b[1] + w * .0750759; b[2] = .969 * b[2] + w * .153852;
+              b[3] = .8665 * b[3] + w * .3104856; b[4] = .55 * b[4] + w * .5329522; b[5] = -.7616 * b[5] - w * .016898;
+              const v = b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + w * .5362; b[6] = w * .115926; return v;
+            }
+            st.l = (st.l + .02 * w) / 1.02; return st.l;
+          }
+          process(_, outputs) {
+            const out = outputs[0];
+            for (let ch = 0; ch < out.length; ch++) { const d = out[ch], st = this.s[ch] || this.s[0];
+              for (let i = 0; i < d.length; i++) d[i] = this.gen(st) * this.k; }
+            return true;
+          }
+        }
+        registerProcessor('dz-noise', DZNoise);`;
+      const blob = URL.createObjectURL(new Blob([code], {type: 'application/javascript'}));
+      const data = 'data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(code)));
+      c.audioWorklet.addModule(blob).catch(() => c.audioWorklet.addModule(data))      // data: URL works for local files
+        .then(() => { z.wk = 2; }).catch(() => { z.wk = -1; });
+    },
+    noiseColor() { return this._nz.color; },
+    analyser() { return this._nz.an; },
+    brown(want) { return want ? this.noisePlay(NZ.color, NZ.vol) : this.noiseStop(); },
+  };
+})();
+const SND_ICON = {full: '🔊', soft: '🔉', off: '🔇'};
+function setSound(mode) {
+  soundMode = VOL[mode] !== undefined ? mode : 'full';
+  $('#sndBtn').textContent = SND_ICON[soundMode];
+  $('#sndBtn').title = 'sound: ' + soundMode + ' (click to change)';
+  try { localStorage.setItem('dz_sound', soundMode); } catch (e) {}
+  sfx.applyVolume();
+}
+$('#sndBtn').onclick = () => {
+  const next = {full: 'soft', soft: 'off', off: 'full'}[soundMode];
+  setSound(next);
+  if (next !== 'off') { sfx.unlock(); sfx.pop(next === 'soft' ? 500 : 800); }
+  toast(next === 'full' ? '🔊 full send' : next === 'soft' ? '🔉 soft mode' : '🔇 muted',
+    next === 'full' ? 'all the sounds, all the dopamine.' : next === 'soft' ? 'quieter, sensory-friendly. alarms still play.' : 'no sound. visuals + vibration off too.', 'var(--violet)');
+};
+$('#refBtn').onclick = () => load(true);
+
+/* ================== NOISE LAB + GOLDILOCKS FINDER ================== */
+const NZ = {color: 'brown', vol: 45, hist: {}};
+try { Object.assign(NZ, JSON.parse(localStorage.getItem('dz_noise') || '{}')); } catch (e) {}
+const nzSave = () => { try { localStorage.setItem('dz_noise', JSON.stringify(NZ)); } catch (e) {} };
+const GF_LEVELS = [{k: 'off', v: 0, label: 'silence'}, {k: 'low', v: 25, label: 'low'}, {k: 'mid', v: 50, label: 'mid'}, {k: 'high', v: 75, label: 'high'}];
+const NZ_EMOJI = {white: '⚪', pink: '🩷', brown: '🟤'};
+
+function nzSync() {
+  const on = sfx.noiseOn();
+  $('#nzPlay').textContent = on ? '⏸' : '▶'; $('#nzPlay').classList.toggle('on', on);
+  $('#nzState').textContent = on ? NZ.color + ' · playing' : 'off'; $('#nzState').classList.toggle('on', on);
+  [...$('#nzColor').children].forEach(b => b.classList.toggle('on', b.dataset.c === NZ.color));
+  $('#nzVol').value = NZ.vol; $('#nzVolT').textContent = NZ.vol + '%';
+  $('#nzLoud').hidden = NZ.vol <= 70; $('#nzVol').classList.toggle('loud', NZ.vol > 70);
+  $('#nzChip').hidden = !on; $('#nzChip').innerHTML = `<i></i>🎧 ${NZ.color} noise · ${NZ.vol}% · tap to stop`;
+  $('#brownBtn').classList.toggle('on', on); $('#brownBtn').textContent = on ? `🎧 ${NZ.color} noise: on` : '🎧 focus noise';
+  const best = gfBest();
+  $('#nzGoldTxt').innerHTML = !best ? 'no goldilocks test yet. it takes 2 min and tells u which level actually helps <i>ur</i> brain.'
+    : best.k === 'off' ? `ur tests so far: <b>silence wins</b> (${best.n} run${best.n > 1 ? 's' : ''}). noise might not be ur thing — that's legit.`
+    : `ur goldilocks zone: <b>${best.label} (${best.v}%)</b> · based on ${best.n} run${best.n > 1 ? 's' : ''}${best.n < 3 ? ' — run it on 2–3 different days to lock it in' : ''}.`;
+  if (on) nzVizStart();
+}
+function setBrown(want) { sfx.unlock(); want ? sfx.noisePlay(NZ.color, NZ.vol) : sfx.noiseStop(); nzSync(); }
+$('#brownBtn').onclick = () => setBrown(!sfx.noiseOn());
+$('#nzPlay').onclick = () => { setBrown(!sfx.noiseOn()); };
+$('#nzChip').onclick = () => setBrown(false);
+$('#nzColor').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  NZ.color = b.dataset.c; nzSave();
+  if (sfx.noiseOn()) sfx.noisePlay(NZ.color, NZ.vol);
+  nzSync();
+};
+$('#nzVol').oninput = e => { NZ.vol = +e.target.value; nzSave(); sfx.noiseVol(NZ.vol); nzSync(); };
+
+let nzRaf = null;
+function nzVizStart() {
+  if (nzRaf) return;
+  const cv = $('#nzViz'), g = cv.getContext('2d');
+  const draw = () => {
+    const an = sfx.analyser(), on = sfx.noiseOn();
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== w * devicePixelRatio) { cv.width = w * devicePixelRatio; cv.height = h * devicePixelRatio; g.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }
+    g.clearRect(0, 0, w, h);
+    if (an && on) {
+      const d = new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(d);
+      const n = 48, bw = w / n, col = {white: '#f2f2f2', pink: '#ff8fc7', brown: '#c08a55'}[NZ.color];
+      for (let i = 0; i < n; i++) {
+        const v = d[Math.floor(Math.pow(i / n, 1.6) * d.length * .9)] / 255, bh = Math.max(2, v * h * .95);
+        g.fillStyle = col; g.globalAlpha = .45 + v * .55;
+        g.beginPath(); g.roundRect ? g.roundRect(i * bw + 1, h - bh, bw - 3, bh, 3) : g.rect(i * bw + 1, h - bh, bw - 3, bh); g.fill();
+      }
+      g.globalAlpha = 1; nzRaf = requestAnimationFrame(draw);
+    } else nzRaf = null;
+  };
+  nzRaf = requestAnimationFrame(draw);
+}
+
+function gfBest() {
+  let best = null;
+  GF_LEVELS.forEach(L => {
+    const a = NZ.hist[L.k]; if (!a || !a.length) return;
+    const avg = a.reduce((s, x) => s + x, 0) / a.length;
+    if (!best || avg > best.avg + .0001) best = {...L, avg, n: a.length};      // ties → quieter level (listed first)
+  });
+  return best;
+}
+
+/* the test: a mini continuous-performance task (spot the X) under 4 noise levels in random order */
+let gf = {on: false, abort: false, stim: null, cur: null};
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function gfShow(id) { ['gfIntro', 'gfRun', 'gfRes'].forEach(x => $('#' + x).hidden = x !== id); }
+function gfOpen() { sfx.unlock(); $('#gfColor').textContent = NZ_EMOJI[NZ.color] + ' ' + NZ.color; gfShow('gfIntro'); $('#gfOv').classList.add('open'); }
+function gfClose() { gf.abort = true; $('#gfOv').classList.remove('open'); }
+$('#nzFind').onclick = gfOpen;
+$('#gfExit1').onclick = $('#gfExit2').onclick = gfClose;
+$('#gfAbort').onclick = () => { gf.abort = true; };
+$('#gfAgain').onclick = () => gfRun();
+$('#gfStart').onclick = () => gfRun();
+function gfRespond(e) {
+  if (!gf.on || !gf.cur || gf.cur.resp) return;
+  if (e) e.preventDefault();
+  gf.cur.resp = true; const L = $('#gfLetter');
+  if (gf.cur.target) { gf.stats.hits++; gf.stats.rts.push(performance.now() - gf.cur.t0); L.className = 'gfletter mono hit'; }
+  else { gf.stats.fa++; L.className = 'gfletter mono fa'; }
+}
+$('#gfRun').addEventListener('pointerdown', e => { if (e.target.id !== 'gfAbort') gfRespond(e); });
+document.addEventListener('keydown', e => { if (gf.on && e.code === 'Space') gfRespond(e); }, true);
+
+async function gfRun() {
+  const wasOn = sfx.noiseOn();
+  gf = {on: false, abort: false, cur: null}; gfShow('gfRun');
+  const order = GF_LEVELS.slice().sort(() => Math.random() - .5), res = {};
+  const ROUND = 30000, ISI = 850, SHOW = 450, letters = 'ABCDEFHKLMNPRTVZ';
+  for (let r = 0; r < order.length && !gf.abort; r++) {
+    const L = order[r];
+    L.v ? sfx.noisePlay(NZ.color, L.v) : sfx.noiseStop(.2);
+    for (let c = 3; c > 0 && !gf.abort; c--) { $('#gfRound').textContent = `round ${r + 1}/4 · starting in ${c}…`; $('#gfLetter').textContent = ''; await wait(1000); }
+    $('#gfRound').textContent = `round ${r + 1}/4`;
+    gf.stats = {hits: 0, targets: 0, fa: 0, non: 0, rts: []}; gf.on = true;
+    const t0 = performance.now(); let lastTarget = false;
+    while (!gf.abort && performance.now() - t0 < ROUND) {
+      const target = !lastTarget && Math.random() < .25; lastTarget = target;
+      target ? gf.stats.targets++ : gf.stats.non++;
+      gf.cur = {target, t0: performance.now(), resp: false};
+      const el = $('#gfLetter'); el.className = 'gfletter mono';
+      el.textContent = target ? 'X' : letters[Math.floor(Math.random() * letters.length)];
+      $('#gfProg').style.width = ((r + (performance.now() - t0) / ROUND) / order.length * 100) + '%';
+      await wait(SHOW); if (!gf.cur.resp) el.textContent = ''; await wait(ISI - SHOW);
+    }
+    gf.on = false; gf.cur = null;
+    const s = gf.stats, hr = s.targets ? s.hits / s.targets : 0, far = s.non ? s.fa / s.non : 0;
+    const rt = s.rts.length ? s.rts.reduce((a, b) => a + b, 0) / s.rts.length : 999;
+    res[L.k] = {score: hr - far - rt / 100000, hr, far, rt};   // accuracy first, speed only breaks ties
+  }
+  wasOn ? sfx.noisePlay(NZ.color, NZ.vol) : sfx.noiseStop();
+  if (gf.abort) { if ($('#gfOv').classList.contains('open')) gfShow('gfIntro'); nzSync(); return; }
+
+  GF_LEVELS.forEach(L => { (NZ.hist[L.k] = NZ.hist[L.k] || []).push(+res[L.k].score.toFixed(4)); NZ.hist[L.k] = NZ.hist[L.k].slice(-10); });
+  nzSave();
+  const today = GF_LEVELS.reduce((b, L) => res[L.k].score > res[b.k].score + .0001 ? L : b, GF_LEVELS[0]);
+  const best = gfBest();
+  $('#gfHead').textContent = best.k === 'off' ? 'silence wins (for now) 🤫' : `ur goldilocks: ${best.label} 🎯`;
+  $('#gfBars').innerHTML = GF_LEVELS.map(L => {
+    const x = res[L.k], pct = Math.max(3, Math.round(Math.max(0, x.score) * 100));
+    return `<div class="gfbar ${L.k === today.k ? 'best' : ''}"><span>${L.label}${L.v ? ' ' + L.v + '%' : ''}</span><div class="tr"><i style="width:0" data-w="${pct}"></i></div>
+      <span>${Math.round(x.hr * 100)}% <small>hit</small></span></div>`;
+  }).join('') + `<div class="gfnote">score = hits minus false taps. green = today's best. false taps today: ${GF_LEVELS.map(L => L.label + ' ' + Math.round(res[L.k].far * 100) + '%').join(' · ')}</div>`;
+  requestAnimationFrame(() => document.querySelectorAll('#gfBars i').forEach(i => i.style.width = i.dataset.w + '%'));
+  const runs = best.n;
+  $('#gfMsg').innerHTML = (best.k === 'off'
+      ? 'ur focus was best with no noise. that\'s a real result — noise helps some ADHD brains, not all. try another colour sometime.'
+      : `this is the level where ur brain locked in best${runs > 1 ? ' on average across ' + runs + ' runs' : ''}.`) +
+    (runs < 3 ? '<br><span class="gfnote">one test is noisy (pun intended). redo it on 2–3 different days and the average gets way more accurate.</span>' : '');
+  $('#gfApply').hidden = best.k === 'off';
+  $('#gfApply').textContent = `use ${best.label} (${best.v}%)`;
+  $('#gfApply').onclick = () => { NZ.vol = best.v; nzSave(); setBrown(true); gfClose(); toast('🎯 goldilocks locked', `${NZ.color} noise at ${best.v}%. vibe.`, 'var(--tc)'); };
+  gfShow('gfRes'); sfx.reward(1, false);
+}
+nzSync();
+
+/* ================== TOASTS ================== */
+function toast(title, msg, col, ms = 4000) {
+  const el = document.createElement('div'); el.className = 'toast'; el.style.setProperty('--tcol', col || 'var(--violet)');
+  el.innerHTML = `<b>${esc(title)}</b>${esc(msg)}`; $('#toasts').prepend(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, ms);
+  while ($('#toasts').children.length > 4) $('#toasts').lastChild.remove();
+}
+
+/* ================== FX: confetti ================== */
+const fx = $('#fx'), fctx = fx.getContext('2d'); let parts = [], fxRun = false;
+function confetti(x, y, n = 120) {
+  const cols = ['#ff3d7f', '#ffe14d', '#c6ff3d', '#b388ff', '#5ce1ff', '#ff9f1c', '#ffffff'];
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 10;
+    parts.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6, g: .28 + Math.random() * .1, r: Math.random() * 6.28, vr: (Math.random() - .5) * .4,
+      w: 5 + Math.random() * 7, h: 3 + Math.random() * 5, c: cols[i % cols.length], life: 90 + Math.random() * 60, star: Math.random() < .25});
+  }
+  if (!fxRun) { fxRun = true; requestAnimationFrame(fxLoop); }
+}
+function fxLoop() {
+  fctx.clearRect(0, 0, fx.width, fx.height);
+  parts = parts.filter(p => p.life > 0);
+  parts.forEach(p => {
+    p.vx *= .985; p.vy = p.vy * .985 + p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life--;
+    fctx.save(); fctx.globalAlpha = Math.min(1, p.life / 40); fctx.translate(p.x, p.y); fctx.rotate(p.r); fctx.fillStyle = p.c;
+    if (p.star) { fctx.beginPath(); for (let i = 0; i < 5; i++) { fctx.lineTo(Math.cos(i * 1.2566) * p.w, Math.sin(i * 1.2566) * p.w); fctx.lineTo(Math.cos(i * 1.2566 + .628) * p.w * .45, Math.sin(i * 1.2566 + .628) * p.w * .45); } fctx.fill(); }
+    else fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    fctx.restore();
+  });
+  if (parts.length) requestAnimationFrame(fxLoop); else { fxRun = false; fctx.clearRect(0, 0, fx.width, fx.height); }
+}
+
+/* ================== FX: ember background ================== */
+const bg = $('#bg'), bctx = bg.getContext('2d'); let embers = [], bgColor = '#c6ff3d';
+function size() { [bg, fx].forEach(c => { c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; c.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }); }
+addEventListener('resize', size); size();
+for (let i = 0; i < 70; i++) embers.push({x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: .6 + Math.random() * 2.2, s: .15 + Math.random() * .6, p: Math.random() * 6.28});
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function bgLoop(t) {
+  bctx.clearRect(0, 0, innerWidth, innerHeight);
+  const speed = 1 + threat() / 35;
+  embers.forEach(e => {
+    e.y -= e.s * speed; e.x += Math.sin(t / 1400 + e.p) * .3;
+    if (e.y < -10) { e.y = innerHeight + 10; e.x = Math.random() * innerWidth; }
+    bctx.beginPath(); bctx.arc(e.x, e.y, e.r, 0, 6.28);
+    bctx.fillStyle = bgColor; bctx.globalAlpha = .25 + .35 * Math.abs(Math.sin(t / 900 + e.p));
+    bctx.shadowColor = bgColor; bctx.shadowBlur = 8; bctx.fill();
+  });
+  bctx.globalAlpha = 1; bctx.shadowBlur = 0;
+  if (!reduce) requestAnimationFrame(bgLoop);
+}
+requestAnimationFrame(bgLoop);
+
+
+/* ================== PANIC ENGINE ==================
+   Targets the soonest deadline in the next 3 hrs that you have NOT started.
+   Level 1 (≤3 h)  tense: slow heartbeat, red edges pulse on each beat
+   Level 2 (≤1 h)  panic: faster heartbeat, ticking clock, hero thumps, glitchy countdown
+   Level 3 (≤10 m) meltdown: racing heartbeat, rising drone, screen glitch + scanlines, full-screen alert at 5 min
+   Level 4 (blown, first 15 min) irregular heartbeat, then hands over to the 15-min nags
+   Marking it "Doing" (▶ start) switches it off instantly → starting is the escape. */
+let panicSnoozeUntil = 0, panicLevel = 0, panicTarget = null, lastPanicKey = '', meltShown = new Set(), beatTimer = null, tickAlt = false, meltRow = null;
+const PANIC_LBL = ['', '😬 tense — under 3 hrs', '😰 panic mode — under 1 hr', '🚨 MELTDOWN — under 10 min', '💀 deadline blown'];
+function computePanic(now = Date.now()) {
+  if (now < panicSnoozeUntil) return {lvl: 0};
+  let best = null;
+  open().forEach(t => {
+    if (!t.deadline || t.status === 'Doing') return;
+    const m = (t.deadline - now) / MIN;
+    if (m <= 180 && m > -15 && (!best || t.deadline < best.deadline)) best = t;
+  });
+  if (!best) return {lvl: 0};
+  const m = (best.deadline - now) / MIN;
+  return {lvl: m <= 0 ? 4 : m <= 10 ? 3 : m <= 60 ? 2 : 1, t: best, m, pi: m <= 0 ? 1 : Math.min(1, Math.max(0, 1 - m / 180))};
+}
+function bpmFor(p) {
+  if (p.lvl === 4) return 168;
+  if (p.lvl === 3) return 140 + (10 - p.m) * 3;     // 140 → 170
+  if (p.lvl === 2) return 95 + (60 - p.m) * .9;     // 95 → 140
+  return 64 + (180 - p.m) * .25;                    // 64 → 94
+}
+function panicTick() {
+  if (!booted) return;
+  const p = computePanic(), b = document.body, now = Date.now();
+  ['p1', 'p2', 'p3', 'p4'].forEach((c, i) => b.classList.toggle(c, p.lvl === i + 1));
+  document.documentElement.style.setProperty('--pi', p.lvl ? p.pi.toFixed(3) : '0');
+  const key = p.lvl ? p.t.row + '|' + p.lvl : '';
+  if (key !== lastPanicKey) { if (p.lvl && (p.lvl > panicLevel || !panicTarget || p.t.row !== panicTarget.row)) { sfx.sting(p.lvl); if (p.lvl >= 2) jolt(); } lastPanicKey = key; }
+  panicLevel = p.lvl; panicTarget = p.t || null;
+
+  const bar = $('#panicBar');
+  if (!p.lvl) bar.classList.remove('show');
+  else {
+    bar.classList.add('show');
+    bar.querySelector('.pl').textContent = PANIC_LBL[p.lvl];
+    bar.querySelector('.pt').textContent = p.t.task;
+    bar.querySelector('.pc').textContent = fmtLeft(p.t.deadline - now);
+    bar.querySelector('.pb').style.width = (p.pi * 100).toFixed(1) + '%';
+  }
+  if (p.lvl >= 2) sfx.clock(tickAlt = !tickAlt, p.lvl);
+  if (p.lvl === 3 && p.m <= 1) setTimeout(() => sfx.clock(tickAlt = !tickAlt, 3), 500);   // double-time in the final minute
+  sfx.drone(p.lvl === 4 ? 1 : p.lvl === 3 ? 1 - p.m / 10 : null);
+
+  if (p.lvl === 3 && p.m <= 5) { const k = p.t.row + '|' + p.t.deadline; if (!meltShown.has(k)) { meltShown.add(k); openMelt(p.t); } }
+  if (meltRow != null) { const t = tasks.find(x => x.row === meltRow); if (t && t.deadline) $('#meltT').textContent = fmtLeft(t.deadline - now); }
+
+  document.querySelectorAll('.card').forEach(c => {
+    const el = c.querySelector('[data-dl]'); if (!el) return;
+    const m = (+el.dataset.dl - now) / MIN;
+    c.classList.toggle('tense', m > 60 && m <= 180); c.classList.toggle('panic', m > 0 && m <= 60);
+  });
+  if (!beatTimer && p.lvl) beat();
+}
+function beat() {
+  const p = computePanic();
+  if (!p.lvl || !booted) { beatTimer = null; return; }
+  sfx.heartbeat(p.pi);
+  const b = document.body; b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat');
+  if (p.lvl >= 3) { try { if (soundMode !== 'off' && navigator.vibrate) navigator.vibrate(25); } catch (e) {} }
+  let ms = 60000 / bpmFor(p);
+  if (p.lvl === 4) ms *= .7 + Math.random() * .6;                                           // arrhythmia when blown
+  beatTimer = setTimeout(beat, ms);
+}
+function openMelt(t) { meltRow = t.row; $('#meltTask').textContent = t.task; $('#meltT').textContent = fmtLeft(t.deadline - Date.now()); $('#meltOv').classList.add('open'); }
+function closeMelt() { $('#meltOv').classList.remove('open'); meltRow = null; }
+function calmToast() { toast('😮‍💨 panic off', 'u started. the heartbeat stops when u\'re on it. keep going.', 'var(--cyan)', 5000); }
+function snoozePanic(min) { panicSnoozeUntil = Date.now() + min * MIN; sfx.rewind(); toast('🫧 panic paused ' + min + ' min', 'breathe. then pick: start it or finish it.', 'var(--cyan)'); panicTick(); }
+$('#meltGo').onclick = () => { const r = meltRow; closeMelt(); sfx.powerUp(); mutate(r, 'Doing'); calmToast(); };
+$('#meltDone').onclick = e => { const r = meltRow; closeMelt(); complete(r, e.currentTarget); };
+$('#meltSnooze').onclick = () => { closeMelt(); snoozePanic(5); };
+
+/* ================== BOOT ================== */
+function enter(withSound) {
+  setSound(withSound ? (soundMode === 'off' ? 'full' : soundMode) : 'off');
+  if (withSound) { sfx.unlock(); sfx.powerUp(); setTimeout(() => sfx.swoosh(), 180); }
+  $('#gate').classList.add('gone'); setTimeout(() => $('#gate').remove(), 700);
+  setTimeout(() => {
+    booted = true;
+    const o = open().filter(t => laneOf(t) === 'overdue');
+    if (o.length) { sfx.warnMid(); jolt(); toast(`😵 ${o.length} thing${o.length > 1 ? 's' : ''} overdue`, 'start w the big box. just that one. u got this.', 'var(--crit)', 6000); }
+    else toast('😌 nothing overdue', 'we\'re so back. top box = ur next move.', 'var(--ok)');
+  }, 650);
+}
+$('#enterBtn').onclick = () => enter(true);
+$('#enterQuiet').onclick = () => enter(false);
+setSound(soundMode);
+load();
+setInterval(tick, 1000);
+if (IS_GAS) setInterval(load, 60 * 1000);
+</script>
+</body>
+</html>
